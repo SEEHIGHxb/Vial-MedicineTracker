@@ -1,4 +1,4 @@
-# Vial — Medicine Tracker
+# Vial
 
 <p align="center">
   <img src="image/vial-animation.svg?v=3" alt="Vial — Medicine Tracker" width="680"/>
