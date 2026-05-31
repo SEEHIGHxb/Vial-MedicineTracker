@@ -1,4 +1,4 @@
-# Vial — Medicine Tracker 🧪
+# Vial — Medicine Tracker
 
 <p align="center">
   <img src="image/vial-animation.svg" alt="Vial — Medicine Tracker" width="680"/>
