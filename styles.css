@@ -1,0 +1,1519 @@
+/* ==========================================================================
+   Vial — Medicine Injection Tracker
+   Strict Apple Web Design System
+   ========================================================================== */
+
+/* 1. Design Tokens & Core Variables */
+:root {
+  /* System Colors */
+  --color-primary: #0066cc; /* Action Blue */
+  --color-primary-focus: #0071e3;
+  --color-primary-on-dark: #2997ff; /* Sky Link Blue */
+  --color-ink: #1d1d1f; /* Near-Black Ink */
+  --color-body: #1d1d1f;
+  --color-body-on-dark: #ffffff;
+  --color-body-muted: #cccccc;
+  --color-ink-muted-80: #333333;
+  --color-ink-muted-48: #7a7a7a;
+  --color-divider-soft: #f0f0f0;
+  --color-hairline: #e0e0e0;
+  
+  /* Surface Canvas Styles */
+  --color-canvas: #ffffff;
+  --color-canvas-parchment: #f5f5f7; /* Signature Apple Off-white */
+  --color-surface-pearl: #fafafc; /* Ghost button fill */
+  --color-surface-tile-1: #272729; /* Dark Tile */
+  --color-surface-tile-2: #2a2a2c;
+  --color-surface-tile-3: #252527;
+  --color-surface-black: #000000;
+  --color-surface-chip-translucent: rgba(210, 210, 215, 0.64);
+  
+  /* Status Text Colors */
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-success: #34c759;
+  --color-warning: #ff9500;
+  --color-danger: #ff3b30;
+  
+  /* Border Radius Scale */
+  --rounded-none: 0px;
+  --rounded-xs: 5px;
+  --rounded-sm: 8px; /* Dark utility buttons */
+  --rounded-md: 11px; /* Pearl buttons */
+  --rounded-lg: 18px; /* Store utility cards */
+  --rounded-pill: 9999px; /* Signature Apple pill */
+  --rounded-full: 50%;
+  
+  /* Spacing Scale (8px baseline) */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 17px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  --spacing-section: 80px;
+}
+
+/* 2. Global Resets & HTML Setup */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px; /* 17px default body font size for signature Apple reading pace */
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: var(--color-canvas);
+}
+
+/* 3. Typographic System */
+h1, h2, h3, h4, .display-lg, .tagline {
+  font-weight: 600;
+  letter-spacing: -0.015em; /* Apple tight headline spacing substitute for Inter */
+  color: var(--color-ink);
+}
+
+.display-lg {
+  font-size: 40px;
+  line-height: 1.1;
+  margin-bottom: var(--spacing-sm);
+}
+
+.lead {
+  font-size: 24px;
+  font-weight: 300; /* Airy light atmosphere text */
+  line-height: 1.4;
+  color: var(--color-ink-muted-80);
+  margin-bottom: var(--spacing-xl);
+  max-width: 720px;
+}
+
+.tagline {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xs);
+  display: block;
+}
+
+/* 4. Global Navigation (Apple global-nav style) */
+.global-nav {
+  background-color: var(--color-surface-black);
+  color: var(--color-on-dark);
+  height: 44px;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1024px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: -0.02em;
+}
+
+.brand-logo {
+  color: var(--color-on-dark);
+}
+
+.nav-menu {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.nav-item {
+  color: #a1a1a6;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: var(--color-on-dark);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.db-indicator {
+  font-size: 10px;
+  text-transform: uppercase;
+  background-color: #333333;
+  color: #86868b;
+  padding: 2px 8px;
+  border-radius: var(--rounded-pill);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* 5. Sub-Navigation (Apple sub-nav-frosted style) */
+.sub-nav-frosted {
+  background-color: rgba(245, 245, 247, 0.85); /* 80-85% parchment opacity */
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  height: 52px;
+  width: 100%;
+  position: sticky;
+  top: 44px;
+  z-index: 99;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.sub-nav-container {
+  max-width: 1024px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sub-nav-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sub-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.sub-nav-stats {
+  font-size: 13px;
+  color: var(--color-ink-muted-48);
+}
+
+/* 6. Buttons Systems */
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* System-wide active/pressed scale micro-interaction */
+button:active, .weekday-chip:active, .filter-chip:active {
+  transform: scale(0.95);
+}
+
+.button-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 400;
+  padding: 8px 16px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button-primary:hover {
+  background-color: var(--color-primary-focus);
+}
+
+.button-primary-accent {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--spacing-md);
+  width: 100%;
+}
+
+.button-primary-accent:hover {
+  background-color: var(--color-primary-focus);
+}
+
+.button-secondary-pill {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  font-size: 14px;
+  font-weight: 400;
+  padding: 10px 22px;
+  border-radius: var(--rounded-pill);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.button-secondary-pill:hover {
+  background-color: rgba(0, 102, 204, 0.05);
+}
+
+.button-pearl-capsule {
+  background-color: var(--color-surface-pearl);
+  color: var(--color-ink-muted-80);
+  font-size: 14px;
+  font-weight: 400;
+  padding: 10px 20px;
+  border-radius: var(--rounded-md);
+  border: 1px solid var(--color-hairline);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button-pearl-capsule:hover {
+  background-color: #f1f1f5;
+  border-color: #d1d1d6;
+}
+
+.button-store-hero {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 16px;
+  font-weight: 400; /* Apple-style lighter weight large buttons */
+  padding: 12px 28px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-store-hero:hover {
+  background-color: var(--color-primary-focus);
+}
+
+.button-icon-circular {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--rounded-full);
+  background-color: rgba(220, 220, 225, 0.5);
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-icon-circular:hover {
+  background-color: rgba(210, 210, 215, 0.7);
+}
+
+.btn-icon {
+  stroke-width: 2.5px;
+}
+
+/* 7. Product Tiles (Alternating light and off-white layouts) */
+.product-tile-light {
+  background-color: var(--color-canvas);
+  padding: var(--spacing-section) 0;
+  display: flex;
+  justify-content: center;
+}
+
+.product-tile-parchment {
+  background-color: var(--color-canvas-parchment);
+  padding: var(--spacing-section) 0;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.tile-content {
+  max-width: 1024px;
+  width: 100%;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 8. Dashboard/Hero Metric Cards */
+.summary-cards-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  width: 100%;
+  max-width: 900px;
+  margin: var(--spacing-xl) 0;
+}
+
+.dashboard-metric-card {
+  background-color: var(--color-surface-pearl);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-lg) var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+}
+
+.dashboard-metric-card:hover {
+  border-color: #b5b5ba;
+}
+
+.metric-value {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  line-height: 1;
+  margin-bottom: var(--spacing-xxs);
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--color-ink-muted-48);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+/* 9. Calendar Component (Weekly Grid) */
+.calendar-tile-content {
+  align-items: stretch;
+  text-align: left;
+}
+
+.calendar-wrapper {
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  overflow: hidden;
+  margin-top: var(--spacing-xl);
+}
+
+.calendar-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-hairline);
+  background-color: var(--color-surface-pearl);
+}
+
+.calendar-week-range {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.calendar-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-ink-muted-80);
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: rgba(0,0,0,0.04);
+  color: var(--color-ink);
+}
+
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  min-height: 380px;
+}
+
+.day-column {
+  border-right: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-canvas);
+}
+
+.day-column:last-child {
+  border-right: none;
+}
+
+/* Highlighting the Current Day column */
+.day-column.today {
+  background-color: rgba(0, 102, 204, 0.02);
+}
+
+.day-header {
+  padding: var(--spacing-md) var(--spacing-xs);
+  text-align: center;
+  border-bottom: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.day-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-48);
+  letter-spacing: 0.05em;
+}
+
+.day-number-bubble {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* Today highlight bubble */
+.day-column.today .day-number-bubble {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.day-events {
+  padding: var(--spacing-sm);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  overflow-y: auto;
+  max-height: 340px;
+}
+
+/* Weekly Injection Status styling in the Calendar Day cells */
+.calendar-patient-bubble {
+  background-color: var(--color-surface-pearl);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  text-align: left;
+}
+
+.calendar-patient-bubble:hover {
+  border-color: #b5b5ba;
+  transform: translateY(-1px);
+}
+
+.bubble-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bubble-time {
+  font-size: 11px;
+  color: var(--color-ink-muted-48);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bubble-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.bubble-check-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--color-hairline);
+  background-color: var(--color-canvas);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.calendar-patient-bubble.pending .bubble-check-btn:hover {
+  border-color: var(--color-primary);
+  color: rgba(0, 102, 204, 0.3);
+}
+
+/* Completed Injection style highlight */
+.calendar-patient-bubble.completed {
+  background-color: rgba(52, 199, 89, 0.04);
+  border-color: rgba(52, 199, 89, 0.15);
+}
+
+.calendar-patient-bubble.completed .bubble-title {
+  text-decoration: line-through;
+  color: var(--color-ink-muted-48);
+  font-weight: 400;
+}
+
+.calendar-patient-bubble.completed .bubble-check-btn {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-on-primary);
+}
+
+.no-patients-day {
+  font-size: 12px;
+  color: var(--color-ink-muted-48);
+  text-align: center;
+  margin-top: var(--spacing-xl);
+  font-style: italic;
+}
+
+/* 10. Patient Directory Grid & Search */
+.database-tile-content {
+  align-items: stretch;
+  text-align: left;
+}
+
+.search-filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.search-bar-wrapper {
+  position: relative;
+  flex-grow: 1;
+  max-width: 480px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted-48);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-pill); /* Search input matches Apple action-pill layout */
+  padding: 12px 20px 12px 46px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary-focus);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.filter-chips-wrapper {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.filter-chip {
+  background-color: var(--color-canvas-parchment);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 16px;
+  border-radius: var(--rounded-pill);
+}
+
+.filter-chip.active {
+  background-color: var(--color-ink);
+  color: var(--color-on-dark);
+}
+
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  width: 100%;
+  margin-top: var(--spacing-md);
+  min-height: 200px;
+}
+
+/* Store-Utility-Card-style Patient Grid Card */
+.store-utility-card {
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg); /* 18px corners */
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.store-utility-card:hover {
+  border-color: #b5b5ba;
+  transform: translateY(-2px);
+}
+
+/* Premium drop-shadow ONLY on the illustrative icon card element */
+.card-ill-box {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--rounded-sm);
+  background-color: var(--color-canvas-parchment);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+  box-shadow: rgba(0, 0, 0, 0.12) 2px 4px 15px; /* The one signature drop-shadow in the app */
+}
+
+/* Red shade for pending, Green shade for injected */
+.card-status-pill {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: var(--rounded-pill);
+}
+
+.card-status-pill.pending {
+  background-color: rgba(255, 59, 48, 0.08);
+  color: var(--color-danger);
+}
+
+.card-status-pill.completed {
+  background-color: rgba(52, 199, 89, 0.08);
+  color: var(--color-success);
+}
+
+.patient-card-body h3 {
+  font-size: 20px;
+  margin-bottom: var(--spacing-xxs);
+}
+
+.patient-card-med {
+  font-size: 14px;
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.patient-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.meta-item {
+  font-size: 13px;
+  color: var(--color-ink-muted-80);
+}
+
+.meta-label {
+  color: var(--color-ink-muted-48);
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-divider-soft);
+  padding-top: var(--spacing-md);
+  margin-top: auto;
+}
+
+.text-link {
+  color: var(--color-primary);
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+/* Empty states */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xxl) var(--spacing-lg);
+  text-align: center;
+  background-color: var(--color-surface-pearl);
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--rounded-lg);
+}
+
+.empty-icon {
+  color: var(--color-ink-muted-48);
+  margin-bottom: var(--spacing-md);
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: var(--color-ink-muted-48);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* 11. Settings & Smart Watch layouts */
+.settings-tile-content {
+  align-items: stretch;
+  text-align: left;
+}
+
+.settings-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+  width: 100%;
+  margin-top: var(--spacing-xl);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.settings-icon {
+  color: var(--color-primary);
+}
+
+.settings-card-desc {
+  font-size: 14px;
+  color: var(--color-ink-muted-80);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-lg);
+}
+
+.setting-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--color-divider-soft);
+  border-bottom: 1px solid var(--color-divider-soft);
+  margin-bottom: var(--spacing-md);
+}
+
+.setting-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* iOS-Style Toggle Switch Control */
+.switch-container {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+}
+
+.switch-container input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-hairline);
+  transition: .3s cubic-bezier(0.25, 1, 0.5, 1);
+  border-radius: 34px;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 27px;
+  width: 27px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .3s cubic-bezier(0.25, 1, 0.5, 1);
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+input:checked + .switch-slider {
+  background-color: var(--color-success); /* iOS green */
+}
+
+input:checked + .switch-slider:before {
+  transform: translateX(20px);
+}
+
+.notification-status-box {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 10px 14px;
+  border-radius: var(--rounded-sm);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notification-status-box.success {
+  background-color: rgba(52, 199, 89, 0.06);
+  color: var(--color-success);
+}
+
+.notification-status-box.warning {
+  background-color: rgba(255, 149, 0, 0.06);
+  color: var(--color-warning);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.guide-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.guide-step {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  background-color: var(--color-surface-pearl);
+  color: var(--color-primary);
+  border: 1px solid var(--color-hairline);
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.guide-step p {
+  font-size: 14px;
+  color: var(--color-ink-muted-80);
+  line-height: 1.45;
+}
+
+.guide-step p strong {
+  color: var(--color-ink);
+}
+
+/* 12. Modal & Sliding Form Sheets (Apple aesthetics) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  z-index: 200;
+  display: flex;
+  justify-content: flex-end; /* Slide-over panel alignment */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.patient-modal-sheet {
+  width: 100%;
+  max-width: 580px;
+  height: 100%;
+  background-color: var(--color-canvas);
+  border-left: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow-y: auto;
+}
+
+.modal-overlay.active .patient-modal-sheet {
+  transform: translateX(0);
+}
+
+.modal-header {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-divider-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.modal-form {
+  padding: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  flex-grow: 1;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-section h3 {
+  font-size: 16px;
+  color: var(--color-ink-muted-48);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-divider-soft);
+  padding-bottom: var(--spacing-xxs);
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.input-hint {
+  font-size: 12px;
+  color: var(--color-ink-muted-48);
+}
+
+.input-row-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.form-input-text {
+  width: 100%;
+  height: 40px;
+  background-color: var(--color-canvas-parchment);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-sm); /* Standard small UI elements rounded.sm */
+  padding: 8px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input-text:focus {
+  background-color: var(--color-canvas);
+  border-color: var(--color-primary-focus);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}
+
+.form-textarea {
+  width: 100%;
+  height: 90px;
+  background-color: var(--color-canvas-parchment);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-sm);
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+  background-color: var(--color-canvas);
+  border-color: var(--color-primary-focus);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}
+
+.form-select-pill {
+  width: 100%;
+  height: 40px;
+  background-color: var(--color-canvas-parchment);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-pill); /* Option select uses the pill grammar */
+  padding: 0 16px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+/* Alarm-style Weekday multi-select chips */
+.weekday-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.weekday-chip {
+  cursor: pointer;
+}
+
+.weekday-chip input {
+  display: none;
+}
+
+.weekday-chip span {
+  width: 100%;
+  height: 42px;
+  background-color: var(--color-canvas-parchment);
+  color: var(--color-ink);
+  border-radius: var(--rounded-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.weekday-chip input:checked + span {
+  background-color: var(--color-ink);
+  color: var(--color-on-dark);
+}
+
+.weekday-chip:hover span {
+  border-color: var(--color-ink-muted-48);
+}
+
+.modal-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-divider-soft);
+  padding-top: var(--spacing-lg);
+  margin-top: auto;
+}
+
+.form-action-right {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+}
+
+/* Detailed display modal (Centered pop-up style) */
+.patient-detail-card-sheet {
+  width: 90%;
+  max-width: 580px;
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  align-self: center;
+  margin: 0 auto;
+  overflow: hidden;
+  max-height: 90vh;
+}
+
+.modal-overlay.active .patient-detail-card-sheet {
+  transform: scale(1);
+}
+
+/* Align modal layout to center for popup */
+.modal-overlay:has(.patient-detail-card-sheet) {
+  justify-content: center;
+  align-items: center;
+}
+
+.detail-sheet-body {
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+}
+
+.detail-sheet-footer {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-divider-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Detail UI Grid items */
+.detail-main-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.detail-patient-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--rounded-full);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.detail-main-info h2 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.detail-main-info p {
+  font-size: 15px;
+  color: var(--color-ink-muted-48);
+}
+
+.detail-grid-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.detail-grid-item {
+  background-color: var(--color-canvas-parchment);
+  border-radius: var(--rounded-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.detail-grid-item-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-48);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.detail-grid-item-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.detail-notes-box {
+  background-color: var(--color-surface-pearl);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.detail-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(52, 199, 89, 0.04);
+  border: 1px solid rgba(52, 199, 89, 0.1);
+  border-radius: var(--rounded-xs);
+  font-size: 14px;
+}
+
+.history-item-date {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.history-item-badge {
+  color: var(--color-success);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* 13. Footer Layout (Apple Footer style) */
+.footer {
+  background-color: var(--color-canvas-parchment);
+  color: var(--color-ink-muted-80);
+  border-top: 1px solid var(--color-hairline);
+  padding: 64px 0 var(--spacing-xxl) 0;
+}
+
+.footer-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-xxl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.footer-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin-bottom: var(--spacing-xs);
+}
+
+.footer-link {
+  font-size: 13px;
+  color: var(--color-ink-muted-80);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  line-height: 2.1; /* Relaxed leading for footer scannability */
+}
+
+.footer-link:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+
+.footer-static-text {
+  font-size: 13px;
+  color: var(--color-ink-muted-48);
+  line-height: 2.1;
+}
+
+.footer-divider {
+  border: 0;
+  border-top: 1px solid var(--color-hairline);
+  margin: var(--spacing-xl) 0;
+}
+
+.footer-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal-text {
+  font-size: 11px;
+  color: var(--color-ink-muted-48);
+  line-height: 1.4;
+}
+
+/* 14. Responsive Behavior (Adaptive Breakpoints) */
+
+/* Large screens content lock */
+@media (min-width: 1441px) {
+  .nav-container, .sub-nav-container, .tile-content, .footer-container {
+    max-width: 1024px;
+  }
+}
+
+/* Tablet landscape / Desktop border (1024px - 1068px) */
+@media (max-width: 1024px) {
+  .summary-cards-container {
+    max-width: 100%;
+    padding: 0 var(--spacing-lg);
+  }
+  .patient-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet portrait transitions (833px & below) */
+@media (max-width: 833px) {
+  .weekly-grid {
+    grid-template-columns: repeat(1, 1fr); /* Collapses calendar to vertical day-column flow */
+    min-height: auto;
+  }
+  .day-column {
+    border-right: none;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .day-column:last-child {
+    border-bottom: none;
+  }
+  .day-header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-surface-pearl);
+  }
+  .day-events {
+    padding: var(--spacing-md);
+    max-height: none;
+  }
+  .settings-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phone screen adjustments (640px & below) */
+@media (max-width: 640px) {
+  .display-lg {
+    font-size: 34px;
+  }
+  .lead {
+    font-size: 18px;
+  }
+  .summary-cards-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  .patient-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-filter-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+  .search-bar-wrapper {
+    max-width: 100%;
+  }
+  .filter-chips-wrapper {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .sub-nav-stats {
+    display: none; /* Hide stats in sub-nav on compact screens */
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  .nav-menu {
+    gap: var(--spacing-md);
+  }
+}
+
+/* Small phone (419px & below) */
+@media (max-width: 419px) {
+  .display-lg {
+    font-size: 28px;
+  }
+  .nav-container {
+    padding: 0 var(--spacing-sm);
+  }
+  .nav-menu {
+    display: none; /* Collapses navigation items */
+  }
+  .sub-nav-container {
+    padding: 0 var(--spacing-sm);
+  }
+  .sub-nav-title {
+    font-size: 16px;
+  }
+  .weekday-chips-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .input-row-grid {
+    grid-template-columns: 1fr;
+  }
+}

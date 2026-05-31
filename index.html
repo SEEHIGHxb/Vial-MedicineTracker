@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vial — Medicine Injection Tracker</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="A premium, local-first medical companion app for nurses to track weekly patient medicine injections with smartwatch notification mirroring.">
+  <meta name="theme-color" content="#1d1d1f">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <!-- Typography: Inter as the high-fidelity SF Pro substitute -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <!-- Core Stylesheet linking -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- iOS Native App Emulation Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vial">
+  <meta name="format-detection" content="telephone=no">
+</head>
+<body>
+
+  <!-- 1. Global Navigation Bar (Apple global-nav style) -->
+  <nav class="global-nav" id="global-nav">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <!-- Minimalist Vial Logo -->
+        <svg class="brand-logo" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 3h12M8 3v3M16 3v3M10 6v15M14 6v15M7 21h10"/>
+        </svg>
+        <span class="brand-text">Vial</span>
+      </div>
+      <div class="nav-menu">
+        <a href="#overview-section" class="nav-item active">Overview</a>
+        <a href="#calendar-section" class="nav-item">Calendar</a>
+        <a href="#database-section" class="nav-item">Patients</a>
+        <a href="#settings-section" class="nav-item">Watch Sync</a>
+      </div>
+      <div class="nav-actions">
+        <span class="db-indicator" id="db-indicator">Local Only</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 2. Sub-Navigation Bar (Apple sub-nav-frosted style) -->
+  <header class="sub-nav-frosted" id="sub-nav">
+    <div class="sub-nav-container">
+      <h1 class="sub-nav-title">Weekly Tracker</h1>
+      <div class="sub-nav-controls">
+        <span class="sub-nav-stats" id="sub-nav-stats">0 of 0 Injected</span>
+        <button class="button-primary" id="add-patient-btn">
+          <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Patient
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Wrapper -->
+  <main class="app-content">
+
+    <!-- 3. Section 1: Hero Overview (White Canvas) -->
+    <section class="product-tile-light" id="overview-section">
+      <div class="tile-content">
+        <p class="tagline">Clinical Dashboard</p>
+        <h2 class="display-lg">Dose accuracy, trackable weekly.</h2>
+        <p class="lead">A beautiful private registry for your patient's injection schedule.</p>
+        
+        <!-- Summary Cards Row -->
+        <div class="summary-cards-container">
+          <div class="dashboard-metric-card">
+            <div class="metric-value" id="metric-due-today">0</div>
+            <div class="metric-label">Due Today</div>
+          </div>
+          <div class="dashboard-metric-card">
+            <div class="metric-value" id="metric-completion">0%</div>
+            <div class="metric-label">Week Progress</div>
+          </div>
+          <div class="dashboard-metric-card">
+            <div class="metric-value" id="metric-total">0</div>
+            <div class="metric-label">Total Patients</div>
+          </div>
+        </div>
+
+        <div class="action-buttons-group">
+          <a href="#calendar-section" class="button-secondary-pill">View Calendar</a>
+          <a href="#database-section" class="button-secondary-pill">Search Database</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Section 2: Calendar & Injection Log (Parchment Canvas) -->
+    <section class="product-tile-parchment" id="calendar-section">
+      <div class="tile-content calendar-tile-content">
+        <p class="tagline">Treatment Calendar</p>
+        <h2 class="display-lg">Weekly Schedule.</h2>
+        <p class="lead">Select patient schedules and record administered weekly doses instantly.</p>
+        
+        <!-- Weekly Grid Layout -->
+        <div class="calendar-wrapper">
+          <div class="calendar-header-row">
+            <div class="calendar-nav-btn" id="prev-week-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </div>
+            <span class="calendar-week-range" id="week-range-label">May 25 – May 31, 2026</span>
+            <div class="calendar-nav-btn" id="next-week-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- The Weekly 7-Day Grid -->
+          <div class="weekly-grid" id="weekly-calendar-grid">
+            <!-- Dynamically generated 7 days will be injected here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Section 3: Patient Database (White Canvas) -->
+    <section class="product-tile-light" id="database-section">
+      <div class="tile-content database-tile-content">
+        <p class="tagline">Patient Directory</p>
+        <h2 class="display-lg">Full clinical records.</h2>
+        <p class="lead">Search and manage patients' medical details and available clinic times.</p>
+        
+        <!-- Search & Filter Controls -->
+        <div class="search-filter-container">
+          <div class="search-bar-wrapper">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" id="patient-search-input" placeholder="Search by name, medicine, or site...">
+          </div>
+          
+          <div class="filter-chips-wrapper">
+            <button class="filter-chip active" data-filter="all">All Patients</button>
+            <button class="filter-chip" data-filter="pending">Pending Injection</button>
+            <button class="filter-chip" data-filter="completed">Completed This Week</button>
+          </div>
+        </div>
+
+        <!-- Store-Utility-Card-style Patient Grid -->
+        <div class="patient-grid" id="patient-cards-grid">
+          <!-- Dynamically populated patient cards -->
+          <div class="empty-state" id="empty-state">
+            <svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p class="empty-title">No Patients Found</p>
+            <p class="empty-desc">Create your first patient to start tracking weekly injections.</p>
+            <button class="button-primary" id="empty-add-btn">Add Patient</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Section 4: Watch Sync & Notifications (Parchment Canvas) -->
+    <section class="product-tile-parchment" id="settings-section">
+      <div class="tile-content settings-tile-content">
+        <p class="tagline">Samsung Smart Watch Integration</p>
+        <h2 class="display-lg">Notifications mirrored instantly.</h2>
+        <p class="lead">Send automatically scheduled alerts at 7:00 AM daily directly to your watch screen.</p>
+        
+        <div class="settings-layout-grid">
+          <!-- Notification Status Card -->
+          <div class="store-utility-card notification-card">
+            <div class="settings-card-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <h3>Daily Alarm Settings</h3>
+            </div>
+            <p class="settings-card-desc">When active, the app checks at the start of the day (7:00 AM) and triggers system notifications listing patients scheduled to receive their weekly medicine injection today.</p>
+            
+            <div class="setting-toggle-row">
+              <span class="setting-label">Daily 7:00 AM Injection Alerts</span>
+              <label class="switch-container">
+                <input type="checkbox" id="alarm-toggle" checked>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            
+            <div class="notification-status-box success" id="notification-status">
+              <span class="status-dot"></span>
+              <span class="status-text" id="status-text">Notifications Enabled (Standard system prompt approved)</span>
+            </div>
+            
+            <button class="button-primary-accent" id="trigger-test-notif-btn">Test Instant Watch Notice</button>
+          </div>
+
+          <!-- Watch Sync Guide Card -->
+          <div class="store-utility-card watch-guide-card">
+            <div class="settings-card-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
+                <rect x="6" y="2" width="12" height="20" rx="4" ry="4"></rect>
+                <line x1="6" y1="6" x2="18" y2="6"></line>
+                <line x1="6" y1="18" x2="18" y2="18"></line>
+              </svg>
+              <h3>How to Sync Samsung Smart Watch</h3>
+            </div>
+            
+            <div class="guide-steps-list">
+              <div class="guide-step">
+                <span class="step-num">1</span>
+                <p><strong>Standard Browser Prompts:</strong> Grant notification permissions when prompted. Standard web notifications are triggered directly by your desktop or mobile browser.</p>
+              </div>
+              <div class="guide-step">
+                <span class="step-num">2</span>
+                <p><strong>For Windows (Phone Link):</strong> Connect your Samsung/Android phone using the <em>Link to Windows</em> application. Standard notifications on your PC will mirror to your phone.</p>
+              </div>
+              <div class="guide-step">
+                <span class="step-num">3</span>
+                <p><strong>Galaxy Wearable Sync:</strong> Open the <em>Galaxy Wearable</em> app on your phone, go to **Watch settings > Notifications**, and ensure notification forwarding is enabled for your phone's browser or Phone Link app.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 7. Sliding Patient Form Panel (Apple Slide-Over sheet style) -->
+  <div class="modal-overlay" id="patient-modal-overlay">
+    <div class="patient-modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title-label">Add Patient Profile</h2>
+        <button class="button-icon-circular" id="close-modal-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form class="modal-form" id="patient-form">
+        <input type="hidden" id="form-patient-id">
+        
+        <div class="form-section">
+          <h3>Personal Information</h3>
+          
+          <div class="input-group">
+            <label for="p-name">Full Name</label>
+            <input type="text" id="p-name" class="form-input-text" required placeholder="e.g., Johnathan Doe">
+          </div>
+
+          <div class="input-row-grid">
+            <div class="input-group">
+              <label for="p-dob">Date of Birth</label>
+              <input type="date" id="p-dob" class="form-input-text" required>
+            </div>
+            <div class="input-group">
+              <label for="p-phone">Phone Number</label>
+              <input type="tel" id="p-phone" class="form-input-text" required placeholder="e.g., (555) 019-2834">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Medicine & Injection Specification</h3>
+          
+          <div class="input-group">
+            <label for="p-medicine">Medicine Name</label>
+            <input type="text" id="p-medicine" class="form-input-text" required placeholder="e.g., B12 Methylcobalamin, Ozempic">
+          </div>
+
+          <div class="input-row-grid">
+            <div class="input-group">
+              <label for="p-dose">Dose Quantity</label>
+              <input type="text" id="p-dose" class="form-input-text" required placeholder="e.g., 1000 mcg, 0.5 mL">
+            </div>
+            <div class="input-group">
+              <label for="p-site">Preferred Site</label>
+              <input type="text" id="p-site" class="form-input-text" required placeholder="e.g., Left Deltoid, Right Abdomen">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Scheduling & Clinic Availability</h3>
+          
+          <div class="input-group">
+            <label>Available Days (Weekly Multi-Select)</label>
+            <p class="input-hint">Select the days the patient is available to come into the clinic.</p>
+            <div class="weekday-chips-grid">
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Mon">
+                <span>Mon</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Tue">
+                <span>Tue</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Wed">
+                <span>Wed</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Thu">
+                <span>Thu</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Fri">
+                <span>Fri</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Sat">
+                <span>Sat</span>
+              </label>
+              <label class="weekday-chip">
+                <input type="checkbox" name="p-available-days" value="Sun">
+                <span>Sun</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="input-row-grid">
+            <div class="input-group">
+              <label for="p-usual-day">Preferred Injection Day</label>
+              <select id="p-usual-day" class="form-select-pill">
+                <option value="Mon">Monday</option>
+                <option value="Tue">Tuesday</option>
+                <option value="Wed">Wednesday</option>
+                <option value="Thu">Thursday</option>
+                <option value="Fri">Friday</option>
+                <option value="Sat">Saturday</option>
+                <option value="Sun">Sunday</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="p-usual-time">Preferred Time</label>
+              <input type="time" id="p-usual-time" class="form-input-text" required value="09:00">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Medical Practice Notes</h3>
+          <div class="input-group">
+            <label for="p-notes">Special Practice Notes</label>
+            <textarea id="p-notes" class="form-textarea" placeholder="Add specific patient notes, clinical parameters, allergies or pre-injection procedures..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-form-actions">
+          <button type="button" class="button-pearl-capsule" id="delete-patient-btn" style="display: none; color: #ff3b30; border-color: rgba(255,59,48,0.12)">Delete Patient</button>
+          <div class="form-action-right">
+            <button type="button" class="button-pearl-capsule" id="cancel-form-btn">Cancel</button>
+            <button type="submit" class="button-store-hero" id="submit-form-btn">Save Profile</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Patient Details Display Modal -->
+  <div class="modal-overlay" id="detail-modal-overlay">
+    <div class="patient-detail-card-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">Patient Profile</h2>
+        <button class="button-icon-circular" id="close-detail-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="detail-sheet-body" id="detail-modal-body">
+        <!-- Injected Dynamically -->
+      </div>
+      
+      <div class="detail-sheet-footer">
+        <button class="button-pearl-capsule" id="edit-detail-btn">Edit Details</button>
+        <button class="button-store-hero" id="close-detail-bottom-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Footer (Apple Footer style) -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <span class="footer-col-title">Vial App</span>
+          <a href="#overview-section" class="footer-link">Overview Dashboard</a>
+          <a href="#calendar-section" class="footer-link">Weekly Calendar</a>
+          <a href="#database-section" class="footer-link">Patient Database</a>
+          <a href="#settings-section" class="footer-link">Smart Watch Setup</a>
+        </div>
+        <div class="footer-col">
+          <span class="footer-col-title">Clinical Tools</span>
+          <a href="#" class="footer-link" onclick="alert('Demo: Weekly check-in log exported to CSV')">Export CSV Logs</a>
+          <a href="#" class="footer-link" onclick="window.print()">Print Weekly Sheet</a>
+        </div>
+        <div class="footer-col">
+          <span class="footer-col-title">Security & Safety</span>
+          <span class="footer-static-text">100% Local Browser Database</span>
+          <span class="footer-static-text">HIPAA Compliant Local Storage</span>
+          <span class="footer-static-text">No External Network Tracking</span>
+        </div>
+      </div>
+      
+      <hr class="footer-divider">
+      
+      <div class="footer-legal">
+        <p class="legal-text">Copyright &copy; 2026 Vial Medical Systems. Designed for clinical private practice. Styled on Apple Web Principles.</p>
+        <p class="legal-text">This web application utilizes 100% locally isolated IndexedDB and LocalStorage systems. Patient medical records never leave your browser sandbox.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
