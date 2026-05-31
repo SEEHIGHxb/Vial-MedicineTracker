@@ -5,32 +5,26 @@
       <stop offset="0%" stop-color="#0066cc" />
       <stop offset="100%" stop-color="#2997ff" />
     </linearGradient>
-    
-    <!-- Soft shadow filter -->
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="2" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.15" />
-    </filter>
   </defs>
   
   <style>
-    .vial-icon {
-      filter: url(#softShadow);
-    }
     .text-vial {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       font-weight: 800;
-      font-size: 72px;
+      font-size: 76px;
       fill: url(#appleGrad);
       letter-spacing: -0.03em;
-      animation: fadeTextOne 10s infinite ease-in-out;
+      text-anchor: middle;
+      animation: fadeTextOne 8s infinite ease-in-out;
     }
     .text-tracker {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       font-weight: 800;
-      font-size: 64px;
+      font-size: 68px;
       fill: #1d1d1f; /* Charcoal for light mode */
       letter-spacing: -0.03em;
-      animation: fadeTextTwo 10s infinite ease-in-out;
+      text-anchor: middle;
+      animation: fadeTextTwo 8s infinite ease-in-out;
     }
     
     /* Responsive system-theme support for transparent background */
@@ -71,27 +65,7 @@
     }
   </style>
 
-  <!-- Transparent background by omitting rect background entirely -->
-
-  <!-- Content Group centered vertically -->
-  <g transform="translate(100, 50)">
-    <!-- Vial Icon -->
-    <g class="vial-icon" transform="translate(40, 35)">
-      <!-- Sleek Apple Medical Vial SVG -->
-      <rect x="0" y="20" width="80" height="120" rx="12" fill="none" stroke="url(#appleGrad)" stroke-width="8" />
-      <line x1="20" y1="20" x2="60" y2="20" stroke="url(#appleGrad)" stroke-width="8" stroke-linecap="round" />
-      <line x1="15" y1="5" x2="65" y2="5" stroke="url(#appleGrad)" stroke-width="8" stroke-linecap="round" />
-      <path d="M 40 45 L 40 115" stroke="url(#appleGrad)" stroke-width="6" stroke-linecap="round" />
-      <path d="M 25 75 L 55 75" stroke="url(#appleGrad)" stroke-width="6" stroke-linecap="round" />
-    </g>
-
-    <!-- Animating Text Area centered vertically alongside the icon -->
-    <g transform="translate(170, 122)">
-      <!-- Animating word 1 -->
-      <text class="text-vial" x="0" y="0">Vial</text>
-      
-      <!-- Animating word 2 -->
-      <text class="text-tracker" x="0" y="0">Medicine Tracker</text>
-    </g>
-  </g>
+  <!-- Centered Animating Text elements -->
+  <text class="text-vial" x="500" y="162">Vial</text>
+  <text class="text-tracker" x="500" y="162">Medicine Tracker</text>
 </svg>
