@@ -1,7 +1,7 @@
 # Vial — Medicine Tracker
 
 <p align="center">
-  <img src="image/vial-animation.svg" alt="Vial — Medicine Tracker" width="680"/>
+  <img src="image/vial-animation.svg?v=3" alt="Vial — Medicine Tracker" width="680"/>
 </p>
 
 Vial is a premium, feature-rich private client-side medical companion application themed around modern **Apple Web Design System** principles. Designed specifically for a single nurse to manage and track weekly medicine injections for patients, Vial runs entirely in the browser as a local-first Single Page Application (SPA), utilizing standard HTML5, CSS3, and JavaScript, with absolute medical privacy via offline browser `localStorage` persistence.
