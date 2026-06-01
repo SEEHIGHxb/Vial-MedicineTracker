@@ -5,7 +5,7 @@
 
 // 1. In-Memory Database & Seed Data
 let patients = [];
-let currentWeekStart = null; // Date object representing the Monday of the currently viewed week
+let currentMonth = null; // Date object representing the currently viewed month
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAYS_FULL = {
@@ -139,9 +139,20 @@ function isInjectedInWeek(patient, mondayDate) {
   });
 }
 
-// Format Date into user-friendly "Month Day, Year"
+// Checks if a patient was injected during the week containing the given date (Monday to Sunday)
+function isInjectedInWeekOfDate(patient, cellDate) {
+  const monday = getStartOfWeek(cellDate);
+  return isInjectedInWeek(patient, monday);
+}
+
+// Format Date into user-friendly "date month year" e.g., "25 May 2026"
 function formatPrettyDate(date) {
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const d = new Date(date);
+  const day = d.getDate();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 // Calculate age from date of birth
@@ -182,126 +193,142 @@ function updateDashboardStats() {
   document.getElementById("sub-nav-stats").textContent = `${injectedThisWeek} of ${patients.length} Injected This Week`;
 }
 
-// Render the 7-day calendar view
-function renderWeeklyCalendar() {
-  const gridContainer = document.getElementById("weekly-calendar-grid");
+// Render the 35 or 42 cell monthly calendar view
+function renderMonthlyCalendar() {
+  const gridContainer = document.getElementById("monthly-calendar-grid");
+  if (!gridContainer) return;
   gridContainer.innerHTML = "";
 
   const today = new Date();
   const todayStr = formatDateString(today);
 
-  // Generate range label for subheader
-  const monday = new Date(currentWeekStart);
-  const sunday = new Date(currentWeekStart);
-  sunday.setDate(monday.getDate() + 6);
-  document.getElementById("week-range-label").textContent = `${formatPrettyDate(monday)} – ${formatPrettyDate(sunday)}`;
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
 
-  WEEKDAYS.forEach((dayName, idx) => {
-    const dayDate = getDateOfWeekday(dayName, currentWeekStart);
-    const dayDateStr = formatDateString(dayDate);
-    const isToday = dayDateStr === todayStr;
+  // Format Month & Year for Header (e.g. "June 2026")
+  const monthNamesFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  document.getElementById("calendar-month-label").textContent = `${monthNamesFull[month]} ${year}`;
 
-    // Create Day Column wrapper
-    const dayColumn = document.createElement("div");
-    dayColumn.className = `day-column ${isToday ? "today" : ""}`;
+  // 1. Render Weekday Header Row inside the grid container first
+  WEEKDAYS.forEach(dayName => {
+    const headerCell = document.createElement("div");
+    headerCell.className = "monthly-day-header-cell";
+    headerCell.textContent = dayName;
+    gridContainer.appendChild(headerCell);
+  });
 
-    // Day Header
-    const dayHeader = document.createElement("div");
-    dayHeader.className = "day-header";
+  // 2. Calculate dates for month sheet grid
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const numDaysInMonth = lastDayOfMonth.getDate();
 
-    const dayNameSpan = document.createElement("span");
-    dayNameSpan.className = "day-name";
-    dayNameSpan.textContent = dayName;
+  // Get Monday-based start offset of the 1st of the month (0=Mon, 6=Sun)
+  let startOffset = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1;
 
-    const dayNumSpan = document.createElement("span");
-    dayNumSpan.className = "day-number-bubble";
-    dayNumSpan.textContent = dayDate.getDate();
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
 
-    dayHeader.appendChild(dayNameSpan);
-    dayHeader.appendChild(dayNumSpan);
-    dayColumn.appendChild(dayHeader);
+  // Total grid cells needed to complete full 7-cell rows (usually 35 or 42)
+  const totalCells = Math.ceil((startOffset + numDaysInMonth) / 7) * 7;
 
-    // Day Events Container
-    const dayEvents = document.createElement("div");
-    dayEvents.className = "day-events";
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement("div");
+    let cellDate = null;
+    let isOtherMonth = false;
 
-    // Filter patients whose usual injection scheduled day is this weekday
-    const scheduledPatients = patients.filter(p => p.usualDay === dayName);
-
-    if (scheduledPatients.length === 0) {
-      const emptyDayMsg = document.createElement("div");
-      emptyDayMsg.className = "no-patients-day";
-      emptyDayMsg.textContent = "No injections";
-      dayEvents.appendChild(emptyDayMsg);
+    if (i < startOffset) {
+      // Previous Month cell padding
+      const prevDayNum = prevMonthLastDay - startOffset + i + 1;
+      cellDate = new Date(year, month - 1, prevDayNum);
+      isOtherMonth = true;
+    } else if (i >= startOffset + numDaysInMonth) {
+      // Next Month cell padding
+      const nextDayNum = i - startOffset - numDaysInMonth + 1;
+      cellDate = new Date(year, month + 1, nextDayNum);
+      isOtherMonth = true;
     } else {
+      // Current Month day cell
+      const dayNum = i - startOffset + 1;
+      cellDate = new Date(year, month, dayNum);
+    }
+
+    const cellDateStr = formatDateString(cellDate);
+    const isToday = cellDateStr === todayStr;
+
+    cell.className = `monthly-day-cell ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""}`;
+
+    // Number bubble
+    const numBubble = document.createElement("div");
+    numBubble.className = "monthly-day-cell-number-bubble";
+    numBubble.textContent = cellDate.getDate();
+    cell.appendChild(numBubble);
+
+    // Events/Injections Container inside the day cell
+    const cellEvents = document.createElement("div");
+    cellEvents.className = "monthly-day-cell-events";
+
+    // Filter patients whose usual injection scheduled day is this cell's weekday
+    const cellDayIndex = cellDate.getDay() === 0 ? 6 : cellDate.getDay() - 1; // Mon=0, Sun=6
+    const cellDayName = WEEKDAYS[cellDayIndex];
+    
+    const scheduledPatients = patients.filter(p => p.usualDay === cellDayName);
+
+    if (scheduledPatients.length > 0) {
       scheduledPatients.forEach(patient => {
-        const injectedThisWeek = isInjectedInWeek(patient, currentWeekStart);
-        
+        // Check if injected in the week of this specific cell date
+        const injectedThisWeek = isInjectedInWeekOfDate(patient, cellDate);
+
         const patientBubble = document.createElement("div");
         patientBubble.className = `calendar-patient-bubble ${injectedThisWeek ? "completed" : "pending"}`;
-        
-        // Save ID to handle clicks
         patientBubble.dataset.patientId = patient.id;
 
-        // Click bubble body to view full profile details
-        patientBubble.addEventListener("click", (e) => {
-          if (e.target.closest(".bubble-check-btn")) return; // Skip if clicked checkbox
-          openPatientDetails(patient.id);
-        });
-
-        // Bubble Content Stack
+        // Display name
         const title = document.createElement("span");
         title.className = "bubble-title";
         title.textContent = patient.name;
+        if (!injectedThisWeek) {
+          title.style.fontWeight = "600";
+          title.style.color = "var(--color-primary)"; // Highlights patients NOT injected
+        }
 
         const timeRow = document.createElement("div");
         timeRow.className = "bubble-time";
         timeRow.innerHTML = `
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          ${patient.usualTime} (${patient.medicine})
+          ${patient.usualTime}
         `;
 
-        const statusRow = document.createElement("div");
-        statusRow.className = "bubble-status-row";
-
-        // Multiselect Alarm Availability indicators
-        const availText = document.createElement("span");
-        availText.style.fontSize = "10px";
-        availText.style.color = "var(--color-ink-muted-48)";
-        availText.textContent = `Available: ${patient.availableDays.join(", ")}`;
-
-        // Complete Checkbox Button
         const checkBtn = document.createElement("button");
         checkBtn.className = "bubble-check-btn";
         checkBtn.innerHTML = `
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         `;
 
-        // Click checkbox to toggle weekly status
-        checkBtn.addEventListener("click", (e) => {
+        // Toggle completion on this date
+        checkBtn.onclick = (e) => {
           e.stopPropagation();
-          toggleInjectionStatus(patient.id, dayDateStr);
-        });
+          toggleInjectionStatus(patient.id, cellDateStr);
+        };
 
-        statusRow.appendChild(availText);
-        statusRow.appendChild(checkBtn);
+        patientBubble.onclick = (e) => {
+          if (e.target.closest(".bubble-check-btn")) return;
+          openPatientDetails(patient.id);
+        };
 
         patientBubble.appendChild(title);
         patientBubble.appendChild(timeRow);
-        patientBubble.appendChild(statusRow);
-
-        dayEvents.appendChild(patientBubble);
+        patientBubble.appendChild(checkBtn);
+        cellEvents.appendChild(patientBubble);
       });
     }
 
-    dayColumn.appendChild(dayEvents);
-    gridContainer.appendChild(dayColumn);
-  });
+    cell.appendChild(cellEvents);
+    gridContainer.appendChild(cell);
+  }
 }
 
 // Toggle whether patient has completed the medicine injection on a specific date
@@ -319,7 +346,7 @@ function toggleInjectionStatus(patientId, dateStr) {
   }
 
   saveToLocalStorage();
-  renderWeeklyCalendar();
+  renderMonthlyCalendar();
   renderPatientDirectory();
 }
 
@@ -534,11 +561,11 @@ function openEditPatientForm(patientId) {
   document.getElementById("delete-patient-btn").style.display = "block";
   // Bind delete behavior
   document.getElementById("delete-patient-btn").onclick = () => {
-    if (confirm(`Are you absolutely sure you want to delete ${patient.name}'s entire profile? This cannot be undone.`)) {
+    if (confirm(`Are you absolutely sure you want to delete ${patient.name}'s entire profile? This cannot be undone`)) {
       patients = patients.filter(p => p.id !== patientId);
       saveToLocalStorage();
       closeModal("patient-modal-overlay");
-      renderWeeklyCalendar();
+      renderMonthlyCalendar();
       renderPatientDirectory();
     }
   };
@@ -568,7 +595,7 @@ function handleFormSubmit(e) {
   });
 
   if (availableDays.length === 0) {
-    alert("Please select at least one available clinic day for weekly scheduling.");
+    alert("Please select at least one available clinic day for weekly scheduling");
     return;
   }
 
@@ -593,7 +620,7 @@ function handleFormSubmit(e) {
 
   saveToLocalStorage();
   closeModal("patient-modal-overlay");
-  renderWeeklyCalendar();
+  renderMonthlyCalendar();
   renderPatientDirectory();
 }
 
@@ -649,7 +676,7 @@ function triggerTestNotification() {
         updateNotificationStatus("success", "Notifications Enabled (Approved)");
         fireScheduledNotification(true); // Forced test notification
       } else {
-        alert("Please enable notification permissions in your browser to test watch sync!");
+        alert("Please enable notification permissions in your browser to test watch sync");
       }
     });
   } else {
@@ -672,17 +699,17 @@ function fireScheduledNotification(isForcedTest = false) {
   if (isForcedTest) {
     title = "Vial — Watch Sync Success";
     if (dueToday.length === 0) {
-      body = `Diagnostic complete! Note received on watch. (No patients scheduled for today). Total active database: ${patients.length} patients.`;
+      body = `Diagnostic complete! Note received on watch (No patients scheduled for today) Total active database: ${patients.length} patients`;
     } else {
       const namesList = dueToday.map(p => `${p.name} (${p.usualTime})`).join(", ");
-      body = `Daily Check: ${dueToday.length} patients scheduled today: ${namesList}.`;
+      body = `Daily Check: ${dueToday.length} patients scheduled today: ${namesList}`;
     }
   } else {
     if (dueToday.length === 0) {
-      body = "Good morning! No patient medicine injections are scheduled for today.";
+      body = "Good morning! No patient medicine injections are scheduled for today";
     } else {
       const namesList = dueToday.map(p => `${p.name} (${p.usualTime} - ${p.medicine})`).join(", ");
-      body = `Morning Alert: ${dueToday.length} patients scheduled today: ${namesList}.`;
+      body = `Morning Alert: ${dueToday.length} patients scheduled today: ${namesList}`;
     }
   }
 
@@ -696,8 +723,15 @@ function fireScheduledNotification(isForcedTest = false) {
       requireInteraction: true // Keeps notification visible on OS/Watch until checked
     };
 
-    new Notification(title, options);
-    console.log("System notification fired successfully.");
+    // PWA Upgrade: Use service worker registration if active for highly stable mobile/watch notifications
+    if ("serviceWorker" in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, options);
+      });
+    } else {
+      new Notification(title, options);
+    }
+    console.log("System notification fired successfully");
   } else {
     // Fallback in-app alert
     alert(`${title}\n\n${body}`);
@@ -727,16 +761,16 @@ function startMorningScheduler() {
 
 // 8. Application Initializer on DOM Load
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize current viewed week start date to the Monday of current week
+  // Initialize current viewed month to first of current month
   const today = new Date();
-  currentWeekStart = getStartOfWeek(today);
+  currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   // Seed database
   seedDatabase();
 
   // Core Renderers
   updateDashboardStats();
-  renderWeeklyCalendar();
+  renderMonthlyCalendar();
   renderPatientDirectory();
 
   // 9. Event Listeners binding
@@ -754,14 +788,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("close-detail-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
   document.getElementById("close-detail-bottom-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
 
-  // Week Navigator button clicks
-  document.getElementById("prev-week-btn").addEventListener("click", () => {
-    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-    renderWeeklyCalendar();
+  // Month Navigator button clicks
+  document.getElementById("prev-month-btn").addEventListener("click", () => {
+    currentMonth.setMonth(currentMonth.getMonth() - 1);
+    renderMonthlyCalendar();
   });
-  document.getElementById("next-week-btn").addEventListener("click", () => {
-    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-    renderWeeklyCalendar();
+  document.getElementById("next-month-btn").addEventListener("click", () => {
+    currentMonth.setMonth(currentMonth.getMonth() + 1);
+    renderMonthlyCalendar();
   });
 
   // Search input typing filter

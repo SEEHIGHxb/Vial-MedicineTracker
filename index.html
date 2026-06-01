@@ -45,16 +45,13 @@
         <a href="#database-section" class="nav-item">Patients</a>
         <a href="#settings-section" class="nav-item">Watch Sync</a>
       </div>
-      <div class="nav-actions">
-        <span class="db-indicator" id="db-indicator">Local Only</span>
-      </div>
     </div>
   </nav>
 
   <!-- 2. Sub-Navigation Bar (Apple sub-nav-frosted style) -->
   <header class="sub-nav-frosted" id="sub-nav">
     <div class="sub-nav-container">
-      <h1 class="sub-nav-title">Weekly Tracker</h1>
+      <h1 class="sub-nav-title">Medicine Tracker</h1>
       <div class="sub-nav-controls">
         <span class="sub-nav-stats" id="sub-nav-stats">0 of 0 Injected</span>
         <button class="button-primary" id="add-patient-btn">
@@ -75,8 +72,8 @@
     <section class="product-tile-light" id="overview-section">
       <div class="tile-content">
         <p class="tagline">Clinical Dashboard</p>
-        <h2 class="display-lg">Dose accuracy, trackable weekly.</h2>
-        <p class="lead">A beautiful private registry for your patient's injection schedule.</p>
+        <h2 class="display-lg">Dose accuracy, trackable weekly</h2>
+        <p class="lead">A beautiful private registry for your patient's injection schedule</p>
         
         <!-- Summary Cards Row -->
         <div class="summary-cards-container">
@@ -105,28 +102,28 @@
     <section class="product-tile-parchment" id="calendar-section">
       <div class="tile-content calendar-tile-content">
         <p class="tagline">Treatment Calendar</p>
-        <h2 class="display-lg">Weekly Schedule.</h2>
-        <p class="lead">Select patient schedules and record administered weekly doses instantly.</p>
+        <h2 class="display-lg">Monthly Schedule</h2>
+        <p class="lead">Select patient schedules and record administered weekly doses instantly</p>
         
         <!-- Weekly Grid Layout -->
         <div class="calendar-wrapper">
           <div class="calendar-header-row">
-            <div class="calendar-nav-btn" id="prev-week-btn">
+            <div class="calendar-nav-btn" id="prev-month-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </div>
-            <span class="calendar-week-range" id="week-range-label">May 25 – May 31, 2026</span>
-            <div class="calendar-nav-btn" id="next-week-btn">
+            <span class="calendar-week-range" id="calendar-month-label">May 2026</span>
+            <div class="calendar-nav-btn" id="next-month-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
           </div>
 
-          <!-- The Weekly 7-Day Grid -->
-          <div class="weekly-grid" id="weekly-calendar-grid">
-            <!-- Dynamically generated 7 days will be injected here -->
+          <!-- The Monthly Day Grid -->
+          <div class="monthly-grid" id="monthly-calendar-grid">
+            <!-- Dynamically generated month grid will be injected here -->
           </div>
         </div>
       </div>
@@ -136,8 +133,8 @@
     <section class="product-tile-light" id="database-section">
       <div class="tile-content database-tile-content">
         <p class="tagline">Patient Directory</p>
-        <h2 class="display-lg">Full clinical records.</h2>
-        <p class="lead">Search and manage patients' medical details and available clinic times.</p>
+        <h2 class="display-lg">Full clinical records</h2>
+        <p class="lead">Search and manage patients' medical details and available clinic times</p>
         
         <!-- Search & Filter Controls -->
         <div class="search-filter-container">
@@ -177,8 +174,8 @@
     <section class="product-tile-parchment" id="settings-section">
       <div class="tile-content settings-tile-content">
         <p class="tagline">Samsung Smart Watch Integration</p>
-        <h2 class="display-lg">Notifications mirrored instantly.</h2>
-        <p class="lead">Send automatically scheduled alerts at 7:00 AM daily directly to your watch screen.</p>
+        <h2 class="display-lg">Notifications mirrored instantly</h2>
+        <p class="lead">Send automatically scheduled alerts at 7:00 AM daily directly to your watch screen</p>
         
         <div class="settings-layout-grid">
           <!-- Notification Status Card -->
@@ -190,7 +187,7 @@
               </svg>
               <h3>Daily Alarm Settings</h3>
             </div>
-            <p class="settings-card-desc">When active, the app checks at the start of the day (7:00 AM) and triggers system notifications listing patients scheduled to receive their weekly medicine injection today.</p>
+            <p class="settings-card-desc">When active, the app checks at the start of the day (7:00 AM) and triggers system notifications listing patients scheduled to receive their weekly medicine injection today</p>
             
             <div class="setting-toggle-row">
               <span class="setting-label">Daily 7:00 AM Injection Alerts</span>
@@ -222,15 +219,15 @@
             <div class="guide-steps-list">
               <div class="guide-step">
                 <span class="step-num">1</span>
-                <p><strong>Standard Browser Prompts:</strong> Grant notification permissions when prompted. Standard web notifications are triggered directly by your desktop or mobile browser.</p>
+                  <p><strong>Standard Browser Prompts:</strong> Grant notification permissions when prompted. Standard web notifications are triggered directly by your desktop or mobile browser</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">2</span>
-                <p><strong>For Windows (Phone Link):</strong> Connect your Samsung/Android phone using the <em>Link to Windows</em> application. Standard notifications on your PC will mirror to your phone.</p>
+                  <p><strong>For Windows (Phone Link):</strong> Connect your Samsung/Android phone using the <em>Link to Windows</em> application. Standard notifications on your PC will mirror to your phone</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">3</span>
-                <p><strong>Galaxy Wearable Sync:</strong> Open the <em>Galaxy Wearable</em> app on your phone, go to **Watch settings > Notifications**, and ensure notification forwarding is enabled for your phone's browser or Phone Link app.</p>
+                  <p><strong>Galaxy Wearable Sync:</strong> Open the <em>Galaxy Wearable</em> app on your phone, go to **Watch settings > Notifications**, and ensure notification forwarding is enabled for your phone's browser or Phone Link app</p>
               </div>
             </div>
           </div>
@@ -301,7 +298,7 @@
           
           <div class="input-group">
             <label>Available Days (Weekly Multi-Select)</label>
-            <p class="input-hint">Select the days the patient is available to come into the clinic.</p>
+            <p class="input-hint">Select the days the patient is available to come into the clinic</p>
             <div class="weekday-chips-grid">
               <label class="weekday-chip">
                 <input type="checkbox" name="p-available-days" value="Mon">
@@ -404,7 +401,7 @@
         <div class="footer-col">
           <span class="footer-col-title">Vial App</span>
           <a href="#overview-section" class="footer-link">Overview Dashboard</a>
-          <a href="#calendar-section" class="footer-link">Weekly Calendar</a>
+          <a href="#calendar-section" class="footer-link">Monthly Calendar</a>
           <a href="#database-section" class="footer-link">Patient Database</a>
           <a href="#settings-section" class="footer-link">Smart Watch Setup</a>
         </div>
@@ -424,8 +421,8 @@
       <hr class="footer-divider">
       
       <div class="footer-legal">
-        <p class="legal-text">Copyright &copy; 2026 Vial Medical Systems. Designed for clinical private practice. Styled on Apple Web Principles.</p>
-        <p class="legal-text">This web application utilizes 100% locally isolated IndexedDB and LocalStorage systems. Patient medical records never leave your browser sandbox.</p>
+        <p class="legal-text">Copyright &copy; 2026 Vial Medical Systems. Designed for clinical private practice</p>
+        <p class="legal-text">This web application utilizes 100% locally isolated IndexedDB and LocalStorage systems. Patient medical records never leave your browser sandbox</p>
       </div>
     </div>
   </footer>

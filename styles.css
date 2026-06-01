@@ -459,39 +459,24 @@ button:active, .weekday-chip:active, .filter-chip:active {
   color: var(--color-ink);
 }
 
-.weekly-grid {
+.monthly-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  min-height: 380px;
+  background-color: var(--color-hairline);
+  gap: 1px; /* Clean border separators */
+  min-height: 480px;
 }
 
-.day-column {
-  border-right: 1px solid var(--color-hairline);
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-canvas);
-}
-
-.day-column:last-child {
-  border-right: none;
-}
-
-/* Highlighting the Current Day column */
-.day-column.today {
-  background-color: rgba(0, 102, 204, 0.02);
-}
-
-.day-header {
-  padding: var(--spacing-md) var(--spacing-xs);
-  text-align: center;
+.monthly-day-header-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: var(--color-surface-pearl);
   border-bottom: 1px solid var(--color-hairline);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  text-align: center;
 }
 
-.day-name {
+.monthly-day-header-cell {
+  padding: var(--spacing-md) var(--spacing-xs);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -499,32 +484,56 @@ button:active, .weekday-chip:active, .filter-chip:active {
   letter-spacing: 0.05em;
 }
 
-.day-number-bubble {
-  width: 32px;
-  height: 32px;
+.monthly-day-cell {
+  background-color: var(--color-canvas);
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  position: relative;
+  transition: background-color 0.2s ease;
+  overflow: hidden;
+}
+
+.monthly-day-cell.today {
+  background-color: rgba(0, 102, 204, 0.015);
+}
+
+.monthly-day-cell.other-month {
+  background-color: #fafafb;
+  color: var(--color-ink-muted-48);
+}
+
+.monthly-day-cell-number-bubble {
+  width: 26px;
+  height: 26px;
   border-radius: var(--rounded-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-ink);
+  margin-bottom: 6px;
+  align-self: flex-start;
 }
 
-/* Today highlight bubble */
-.day-column.today .day-number-bubble {
+.monthly-day-cell.today .monthly-day-cell-number-bubble {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
 }
 
-.day-events {
-  padding: var(--spacing-sm);
-  flex-grow: 1;
+.monthly-day-cell.other-month .monthly-day-cell-number-bubble {
+  color: var(--color-ink-muted-48);
+}
+
+.monthly-day-cell-events {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 6px;
+  flex-grow: 1;
   overflow-y: auto;
-  max-height: 340px;
+  max-height: 140px;
 }
 
 /* Weekly Injection Status styling in the Calendar Day cells */
