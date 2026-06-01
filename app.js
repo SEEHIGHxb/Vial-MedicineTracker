@@ -1,21 +1,22 @@
 /**
  * Vial — Medicine Injection Tracker
- * Clinical Patient Database & Weekly Schedule Logic
+ * Clinical Patient Database & Weekly Agenda Schedule Logic
  */
 
-// 1. In-Memory Database & Seed Data
+// 1. In-Memory Database & Core Constants
 let patients = [];
 let currentMonth = null; // Date object representing the currently viewed month
+let selectedDate = null; // Date object representing the currently highlighted calendar day
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS_FULL = {
+  "Sun": "Sunday",
   "Mon": "Monday",
   "Tue": "Tuesday",
   "Wed": "Wednesday",
   "Thu": "Thursday",
   "Fri": "Friday",
-  "Sat": "Saturday",
-  "Sun": "Sunday"
+  "Sat": "Saturday"
 };
 
 // Seed patients data if LocalStorage is empty
@@ -25,19 +26,21 @@ function seedDatabase() {
     patients = JSON.parse(localData);
   } else {
     // High-quality mock patients to give a fully functional clinical view immediately
+    // Styled for the new streamlined schema (Rounds 1-3, custom schedules, no medicine specs)
     patients = [
       {
         id: "pat_1",
         name: "Johnathan Doe",
         dob: "1982-04-12",
         phone: "(555) 019-2834",
-        medicine: "B12 Methylcobalamin",
-        dose: "1000 mcg / 1 mL",
-        site: "Left Deltoid",
-        availableDays: ["Mon", "Wed", "Fri"],
         usualDay: "Mon",
-        usualTime: "09:00",
-        notes: "Patient prefers a slow injection. Monitor for mild site redness. Patient has a mild penicillin allergy.",
+        usualRound: 2,
+        schedules: {
+          "Mon": 2,
+          "Wed": 1,
+          "Fri": 3
+        },
+        notes: "Patient prefers a slow injection. Monitor for mild site redness. Patient has a mild penicillin allergy",
         injectionLogs: ["2026-05-25"] // Completed on Monday of the current week (May 25, 2026)
       },
       {
@@ -45,13 +48,13 @@ function seedDatabase() {
         name: "Eleanor Vance",
         dob: "1954-11-28",
         phone: "(555) 048-1192",
-        medicine: "Ozempic (Semaglutide)",
-        dose: "0.5 mg / 0.37 mL",
-        site: "Right Abdomen",
-        availableDays: ["Wed", "Fri"],
         usualDay: "Wed",
-        usualTime: "10:30",
-        notes: "Check blood glucose levels prior to administration. Remind patient about weekly dietary guidelines.",
+        usualRound: 1,
+        schedules: {
+          "Wed": 1,
+          "Fri": 2
+        },
+        notes: "Check blood glucose levels prior to administration. Remind patient about weekly dietary guidelines",
         injectionLogs: [] // Pending for this week
       },
       {
@@ -59,13 +62,14 @@ function seedDatabase() {
         name: "Marcus Brody",
         dob: "1968-07-03",
         phone: "(555) 091-8837",
-        medicine: "Methotrexate",
-        dose: "15 mg / 0.6 mL",
-        site: "Left Thigh",
-        availableDays: ["Tue", "Thu", "Fri"],
         usualDay: "Fri",
-        usualTime: "14:00",
-        notes: "Administer with a high-gauge needle. Patient takes folic acid daily. Check blood count lab sheet monthly.",
+        usualRound: 3,
+        schedules: {
+          "Tue": 2,
+          "Thu": 2,
+          "Fri": 3
+        },
+        notes: "Administer with a high-gauge needle. Patient takes folic acid daily. Check blood count lab sheet monthly",
         injectionLogs: [] // Pending for this week
       },
       {
@@ -73,13 +77,13 @@ function seedDatabase() {
         name: "Sarah Jenkins",
         dob: "1991-09-15",
         phone: "(555) 022-7711",
-        medicine: "Humira (Adalimumab)",
-        dose: "40 mg / 0.4 mL",
-        site: "Right Thigh",
-        availableDays: ["Sat", "Sun"],
         usualDay: "Sun",
-        usualTime: "08:00",
-        notes: "Keep medication refrigerated until 30 minutes before injection. Patient self-injects occasionally under supervision.",
+        usualRound: 1,
+        schedules: {
+          "Sat": 2,
+          "Sun": 1
+        },
+        notes: "Keep medication refrigerated until 30 minutes before injection. Patient self-injects occasionally under supervision",
         injectionLogs: ["2026-05-31"] // Completed today (Sunday May 31, 2026)
       }
     ];
@@ -94,15 +98,14 @@ function saveToLocalStorage() {
 
 // 2. Helper Date & Calendar Utilities
 
-// Returns the Monday date of the week containing the given date
+// Returns the Sunday date of the week containing the given date
 function getStartOfWeek(d) {
   const date = new Date(d);
-  const day = date.getDay();
-  // Adjust so Sunday is day index 6, Monday is index 0
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(date.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+  const day = date.getDay(); // Sunday=0, Monday=1, etc.
+  const diff = date.getDate() - day; // Subtract day index to get Sunday
+  const sunday = new Date(date.setDate(diff));
+  sunday.setHours(0, 0, 0, 0);
+  return sunday;
 }
 
 // Format Date object to YYYY-MM-DD
@@ -118,34 +121,25 @@ function formatDateString(date) {
   return [year, month, day].join('-');
 }
 
-// Get the date of a specific weekday in the currently viewed week
-function getDateOfWeekday(weekdayName, startOfWeekMonday) {
-  const dayIndex = WEEKDAYS.indexOf(weekdayName);
-  if (dayIndex === -1) return null;
-  const result = new Date(startOfWeekMonday);
-  result.setDate(startOfWeekMonday.getDate() + dayIndex);
-  return result;
-}
-
-// Checks if a patient was injected during the currently viewed week (Monday to Sunday)
-function isInjectedInWeek(patient, mondayDate) {
-  const weekStartStr = formatDateString(mondayDate);
-  const sundayDate = new Date(mondayDate);
-  sundayDate.setDate(mondayDate.getDate() + 6);
-  const weekEndStr = formatDateString(sundayDate);
+// Checks if a patient was injected during the currently viewed week (Sunday to Saturday)
+function isInjectedInWeek(patient, sundayDate) {
+  const weekStartStr = formatDateString(sundayDate);
+  const saturdayDate = new Date(sundayDate);
+  saturdayDate.setDate(sundayDate.getDate() + 6);
+  const weekEndStr = formatDateString(saturdayDate);
 
   return patient.injectionLogs.some(logDate => {
     return logDate >= weekStartStr && logDate <= weekEndStr;
   });
 }
 
-// Checks if a patient was injected during the week containing the given date (Monday to Sunday)
+// Checks if a patient was injected during the week containing the given date (Sunday to Saturday)
 function isInjectedInWeekOfDate(patient, cellDate) {
-  const monday = getStartOfWeek(cellDate);
-  return isInjectedInWeek(patient, monday);
+  const sunday = getStartOfWeek(cellDate);
+  return isInjectedInWeek(patient, sunday);
 }
 
-// Format Date into user-friendly "date month year" e.g., "25 May 2026"
+// Format Date into user-friendly "date month year" e.g., "31 May 2026"
 function formatPrettyDate(date) {
   const d = new Date(date);
   const day = d.getDate();
@@ -168,11 +162,11 @@ function calculateAge(dobStr) {
 // Initialize Dashboard Overview Metrics
 function updateDashboardStats() {
   const todayDate = new Date();
-  const todayDayName = WEEKDAYS[todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1]; // Mon=0, Sun=6
-  const currentMon = getStartOfWeek(todayDate);
+  const todayDayName = WEEKDAYS[todayDate.getDay()];
+  const currentSun = getStartOfWeek(todayDate);
 
-  // Due Today count: patients whose usual injection day is today
-  const dueToday = patients.filter(p => p.usualDay === todayDayName).length;
+  // Due Today count: patients scheduled on today's weekday
+  const dueToday = patients.filter(p => p.schedules[todayDayName] !== undefined).length;
   document.getElementById("metric-due-today").textContent = dueToday;
 
   // Total patients
@@ -185,7 +179,7 @@ function updateDashboardStats() {
     return;
   }
 
-  const injectedThisWeek = patients.filter(p => isInjectedInWeek(p, currentMon)).length;
+  const injectedThisWeek = patients.filter(p => isInjectedInWeek(p, currentSun)).length;
   const completionPercent = Math.round((injectedThisWeek / patients.length) * 100);
   document.getElementById("metric-completion").textContent = `${completionPercent}%`;
 
@@ -193,7 +187,7 @@ function updateDashboardStats() {
   document.getElementById("sub-nav-stats").textContent = `${injectedThisWeek} of ${patients.length} Injected This Week`;
 }
 
-// Render the 35 or 42 cell monthly calendar view
+// Render the monthly calendar grid using compact indicator dots (Google Calendar Style)
 function renderMonthlyCalendar() {
   const gridContainer = document.getElementById("monthly-calendar-grid");
   if (!gridContainer) return;
@@ -201,6 +195,7 @@ function renderMonthlyCalendar() {
 
   const today = new Date();
   const todayStr = formatDateString(today);
+  const selectedStr = selectedDate ? formatDateString(selectedDate) : null;
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -209,7 +204,7 @@ function renderMonthlyCalendar() {
   const monthNamesFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   document.getElementById("calendar-month-label").textContent = `${monthNamesFull[month]} ${year}`;
 
-  // 1. Render Weekday Header Row inside the grid container first
+  // 1. Render Weekday Header Row inside the grid container (Sunday-start: Sun to Sat)
   WEEKDAYS.forEach(dayName => {
     const headerCell = document.createElement("div");
     headerCell.className = "monthly-day-header-cell";
@@ -222,8 +217,8 @@ function renderMonthlyCalendar() {
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const numDaysInMonth = lastDayOfMonth.getDate();
 
-  // Get Monday-based start offset of the 1st of the month (0=Mon, 6=Sun)
-  let startOffset = firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1;
+  // Get Sunday-based start offset of the 1st of the month (0=Sun, 6=Sat)
+  let startOffset = firstDayOfMonth.getDay();
 
   const prevMonthLastDay = new Date(year, month, 0).getDate();
 
@@ -253,85 +248,169 @@ function renderMonthlyCalendar() {
 
     const cellDateStr = formatDateString(cellDate);
     const isToday = cellDateStr === todayStr;
+    const isSelected = selectedStr && cellDateStr === selectedStr;
 
-    cell.className = `monthly-day-cell ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""}`;
+    cell.className = `monthly-day-cell ${isToday ? "today" : ""} ${isSelected ? "selected-day" : ""} ${isOtherMonth ? "other-month" : ""}`;
 
-    // Number bubble
+    // Day number bubble
     const numBubble = document.createElement("div");
     numBubble.className = "monthly-day-cell-number-bubble";
     numBubble.textContent = cellDate.getDate();
     cell.appendChild(numBubble);
 
-    // Events/Injections Container inside the day cell
-    const cellEvents = document.createElement("div");
-    cellEvents.className = "monthly-day-cell-events";
+    // Indicators Dots Container for Scheduled Rounds
+    const dotsContainer = document.createElement("div");
+    dotsContainer.className = "calendar-dots-container";
 
-    // Filter patients whose usual injection scheduled day is this cell's weekday
-    const cellDayIndex = cellDate.getDay() === 0 ? 6 : cellDate.getDay() - 1; // Mon=0, Sun=6
+    const cellDayIndex = cellDate.getDay();
     const cellDayName = WEEKDAYS[cellDayIndex];
-    
-    const scheduledPatients = patients.filter(p => p.usualDay === cellDayName);
+
+    // Find patients scheduled for this weekday
+    const scheduledPatients = patients.filter(p => p.schedules[cellDayName] !== undefined);
 
     if (scheduledPatients.length > 0) {
       scheduledPatients.forEach(patient => {
-        // Check if injected in the week of this specific cell date
         const injectedThisWeek = isInjectedInWeekOfDate(patient, cellDate);
-
-        const patientBubble = document.createElement("div");
-        patientBubble.className = `calendar-patient-bubble ${injectedThisWeek ? "completed" : "pending"}`;
-        patientBubble.dataset.patientId = patient.id;
-
-        // Display name
-        const title = document.createElement("span");
-        title.className = "bubble-title";
-        title.textContent = patient.name;
-        if (!injectedThisWeek) {
-          title.style.fontWeight = "600";
-          title.style.color = "var(--color-primary)"; // Highlights patients NOT injected
-        }
-
-        const timeRow = document.createElement("div");
-        timeRow.className = "bubble-time";
-        timeRow.innerHTML = `
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          ${patient.usualTime}
-        `;
-
-        const checkBtn = document.createElement("button");
-        checkBtn.className = "bubble-check-btn";
-        checkBtn.innerHTML = `
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        `;
-
-        // Toggle completion on this date
-        checkBtn.onclick = (e) => {
-          e.stopPropagation();
-          toggleInjectionStatus(patient.id, cellDateStr);
-        };
-
-        patientBubble.onclick = (e) => {
-          if (e.target.closest(".bubble-check-btn")) return;
-          openPatientDetails(patient.id);
-        };
-
-        patientBubble.appendChild(title);
-        patientBubble.appendChild(timeRow);
-        patientBubble.appendChild(checkBtn);
-        cellEvents.appendChild(patientBubble);
+        
+        const dot = document.createElement("span");
+        dot.className = `calendar-indicator-dot ${injectedThisWeek ? "completed" : "pending"}`;
+        dot.title = `${patient.name} (Round ${patient.schedules[cellDayName]}) — ${injectedThisWeek ? "Completed" : "Pending"}`;
+        dotsContainer.appendChild(dot);
       });
     }
 
-    cell.appendChild(cellEvents);
+    cell.appendChild(dotsContainer);
+
+    // Click handler to select a day and render its Agenda list underneath
+    const targetDate = new Date(cellDate);
+    cell.addEventListener("click", () => {
+      selectedDate = targetDate;
+      renderMonthlyCalendar(); // Refresh highlight selector
+      renderDailyAgenda(targetDate);
+    });
+
     gridContainer.appendChild(cell);
   }
 }
 
-// Toggle whether patient has completed the medicine injection on a specific date
+// Render the selected day injections agenda list below the calendar grid
+function renderDailyAgenda(date) {
+  const agendaSection = document.getElementById("agenda-section");
+  const subtitleEl = document.getElementById("agenda-date-subtitle");
+  const titleEl = document.getElementById("agenda-date-title");
+  const statsEl = document.getElementById("agenda-stats-pill");
+  const listContainer = document.getElementById("agenda-patients-list");
+
+  if (!agendaSection || !listContainer) return;
+
+  const dateStr = formatDateString(date);
+  const weekdayName = WEEKDAYS[date.getDay()];
+  const prettyDate = formatPrettyDate(date);
+  const weekdayFullName = WEEKDAYS_FULL[weekdayName];
+
+  subtitleEl.textContent = `${weekdayFullName} Queue`;
+  titleEl.textContent = prettyDate;
+  agendaSection.style.display = "block";
+
+  // Filter patients scheduled on this weekday
+  const scheduled = patients.filter(p => p.schedules[weekdayName] !== undefined);
+
+  if (scheduled.length === 0) {
+    statsEl.textContent = "0 scheduled";
+    listContainer.innerHTML = `<div class="no-patients-day">No patient injections are scheduled for this day</div>`;
+    return;
+  }
+
+  // Calculate complete count
+  const completedCount = scheduled.filter(p => p.injectionLogs.includes(dateStr)).length;
+  statsEl.textContent = `${completedCount} of ${scheduled.length} Completed`;
+
+  listContainer.innerHTML = "";
+
+  // Group scheduled patients by Rounds 1, 2, and 3
+  for (let round = 1; round <= 3; round++) {
+    const roundPatients = scheduled.filter(p => parseInt(p.schedules[weekdayName]) === round);
+    if (roundPatients.length === 0) continue;
+
+    const roundGroup = document.createElement("div");
+    roundGroup.className = "agenda-round-group";
+
+    const roundTitle = document.createElement("div");
+    roundTitle.className = "agenda-round-title";
+    roundTitle.textContent = `Round ${round}`;
+    roundGroup.appendChild(roundTitle);
+
+    roundPatients.forEach(patient => {
+      const isCompleted = patient.injectionLogs.includes(dateStr);
+
+      const item = document.createElement("div");
+      item.className = `agenda-item ${isCompleted ? "completed" : ""}`;
+
+      // Left Column: Checkbox + Name
+      const leftCol = document.createElement("div");
+      leftCol.className = "agenda-item-left";
+
+      const checkContainer = document.createElement("div");
+      checkContainer.className = "agenda-checkbox-container";
+
+      const checkbox = document.createElement("button");
+      checkbox.className = "agenda-checkbox";
+      checkbox.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      `;
+
+      // Toggle Injection Completion status specifically on this clicked date
+      checkbox.onclick = (e) => {
+        e.stopPropagation();
+        toggleInjectionStatus(patient.id, dateStr);
+      };
+
+      checkContainer.appendChild(checkbox);
+      leftCol.appendChild(checkContainer);
+
+      const nameLink = document.createElement("a");
+      nameLink.className = "agenda-patient-details-link";
+      nameLink.textContent = patient.name;
+      nameLink.onclick = () => openPatientDetails(patient.id);
+
+      leftCol.appendChild(nameLink);
+      item.appendChild(leftCol);
+
+      // Right Column: Details trigger icon or round status badge
+      const rightCol = document.createElement("div");
+      rightCol.className = "agenda-item-right";
+
+      const roundBadge = document.createElement("span");
+      roundBadge.className = "agenda-round-badge";
+      roundBadge.textContent = `Round ${round}`;
+      rightCol.appendChild(roundBadge);
+
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "button-icon-circular";
+      profileBtn.style.width = "30px";
+      profileBtn.style.height = "30px";
+      profileBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      `;
+      profileBtn.onclick = () => openPatientDetails(patient.id);
+
+      rightCol.appendChild(profileBtn);
+      item.appendChild(rightCol);
+
+      roundGroup.appendChild(item);
+    });
+
+    listContainer.appendChild(roundGroup);
+  }
+}
+
+// Toggle whether a patient has completed the medicine injection on a specific date
 function toggleInjectionStatus(patientId, dateStr) {
   const patient = patients.find(p => p.id === patientId);
   if (!patient) return;
@@ -347,34 +426,37 @@ function toggleInjectionStatus(patientId, dateStr) {
 
   saveToLocalStorage();
   renderMonthlyCalendar();
+  if (selectedDate) renderDailyAgenda(selectedDate);
   renderPatientDirectory();
 }
 
-// Render the Patient Directory Search List
+// Render the Patient Directory Grid (Search & Filter Chip logic)
 function renderPatientDirectory() {
   const gridContainer = document.getElementById("patient-cards-grid");
-  const searchVal = document.getElementById("patient-search-input").value.toLowerCase();
-  const activeFilter = document.querySelector(".filter-chip.active").dataset.filter;
+  const searchInput = document.getElementById("patient-search-input");
+  if (!gridContainer || !searchInput) return;
+
+  const searchVal = searchInput.value.toLowerCase();
+  const activeFilter = document.querySelector(".filter-chip.active")?.dataset.filter || "all";
 
   // Clear previous grid, keeping empty state helper
   const emptyState = document.getElementById("empty-state");
   gridContainer.innerHTML = "";
   gridContainer.appendChild(emptyState);
 
-  const currentMon = getStartOfWeek(new Date());
+  const currentSun = getStartOfWeek(new Date());
 
   // Filter & Search calculation
   const filteredPatients = patients.filter(patient => {
-    // Search match fields: Name, Medicine, notes
+    // Search fields: Name, Notes, Schedules description
     const matchSearch = patient.name.toLowerCase().includes(searchVal) ||
-                        patient.medicine.toLowerCase().includes(searchVal) ||
-                        patient.site.toLowerCase().includes(searchVal) ||
-                        patient.notes.toLowerCase().includes(searchVal);
+                        (patient.notes && patient.notes.toLowerCase().includes(searchVal)) ||
+                        Object.keys(patient.schedules).some(day => WEEKDAYS_FULL[day].toLowerCase().includes(searchVal));
 
     if (!matchSearch) return false;
 
     // Filter chip match
-    const injectedThisWeek = isInjectedInWeek(patient, currentMon);
+    const injectedThisWeek = isInjectedInWeek(patient, currentSun);
     if (activeFilter === "pending" && injectedThisWeek) return false;
     if (activeFilter === "completed" && !injectedThisWeek) return false;
 
@@ -387,10 +469,15 @@ function renderPatientDirectory() {
     emptyState.style.display = "none";
     
     filteredPatients.forEach(patient => {
-      const injectedThisWeek = isInjectedInWeek(patient, currentMon);
+      const injectedThisWeek = isInjectedInWeek(patient, currentSun);
       
       const card = document.createElement("div");
       card.className = "store-utility-card";
+
+      // Format custom schedules list for card preview
+      const schedulesSummary = Object.entries(patient.schedules)
+        .map(([day, round]) => `${day} (R${round})`)
+        .join(", ");
 
       // HTML template for patient card styled in Apple Store Grid Card chassis
       card.innerHTML = `
@@ -400,30 +487,27 @@ function renderPatientDirectory() {
         
         <div class="patient-card-body">
           <div class="card-ill-box">
-            <!-- Medicine Vial minimal SVG icon -->
+            <!-- Medical profile minimal silhouette -->
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 3h12M10 6v15M14 6v15M9 21h6" />
-              <rect x="8" y="6" width="8" height="15" rx="1" />
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
           
           <h3>${patient.name}</h3>
-          <p class="patient-card-med">${patient.medicine} (${patient.dose})</p>
+          <p class="patient-card-med">Primary schedule: ${WEEKDAYS_FULL[patient.usualDay]} · Round ${patient.usualRound}</p>
           
-          <div class="patient-meta-list">
+          <div class="patient-meta-list" style="margin-top: 12px;">
             <div class="meta-item">
-              <span class="meta-label">Schedule:</span> ${WEEKDAYS_FULL[patient.usualDay]}s at ${patient.usualTime}
+              <span class="meta-label">Schedule Matrix:</span> ${schedulesSummary || "No schedules set"}
             </div>
-            <div class="meta-item">
-              <span class="meta-label">Clinic Days:</span> ${patient.availableDays.join(", ")}
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Injection Site:</span> ${patient.site}
+            <div class="meta-item" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+              <span class="meta-label">Notes:</span> ${patient.notes || "None"}
             </div>
           </div>
         </div>
 
-        <div class="card-actions">
+        <div class="card-actions" style="margin-top: 16px;">
           <a class="text-link" onclick="openPatientDetails('${patient.id}')">View Profile</a>
           <button class="button-pearl-capsule" onclick="openEditPatientForm('${patient.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -448,7 +532,7 @@ function openPatientDetails(patientId) {
   const age = calculateAge(patient.dob);
 
   // Generate logs history list
-  let logsHtml = `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No past injections logged.</p>`;
+  let logsHtml = `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No past injections logged</p>`;
   if (patient.injectionLogs.length > 0) {
     const sortedLogs = [...patient.injectionLogs].sort().reverse();
     logsHtml = `
@@ -466,6 +550,14 @@ function openPatientDetails(patientId) {
     `;
   }
 
+  // Format dynamic matrix details
+  const matrixDetailsHtml = Object.entries(patient.schedules)
+    .map(([day, round]) => `
+      <div style="background-color: var(--color-surface-pearl); border: 1px solid var(--color-hairline); border-radius: var(--rounded-sm); padding: var(--spacing-xs) var(--spacing-sm); font-size: 13px; font-weight: 600;">
+        ${WEEKDAYS_FULL[day]}: Round ${round}
+      </div>
+    `).join("") || `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No clinic availability configured</p>`;
+
   detailBody.innerHTML = `
     <div class="detail-main-header">
       <div class="detail-patient-avatar">
@@ -477,35 +569,28 @@ function openPatientDetails(patientId) {
       </div>
     </div>
 
-    <div class="detail-grid-section">
+    <div class="detail-grid-section" style="margin-top: var(--spacing-lg);">
       <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Prescribed Medicine</div>
-        <div class="detail-grid-item-value">${patient.medicine}</div>
+        <div class="detail-grid-item-label">Primary Schedule Day</div>
+        <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]}</div>
       </div>
       <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Dosage Quantity</div>
-        <div class="detail-grid-item-value">${patient.dose}</div>
-      </div>
-      <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Clinic Availability</div>
-        <div class="detail-grid-item-value">${patient.availableDays.join(", ")}</div>
-      </div>
-      <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Preferred Time</div>
-        <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]} @ ${patient.usualTime}</div>
-      </div>
-      <div class="detail-grid-item" style="grid-column: span 2;">
-        <div class="detail-grid-item-label">Preferred Injection Site</div>
-        <div class="detail-grid-item-value">${patient.site}</div>
+        <div class="detail-grid-item-label">Primary Schedule Session</div>
+        <div class="detail-grid-item-value">Round ${patient.usualRound}</div>
       </div>
     </div>
 
-    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs);">Clinical Practice Notes</h3>
+    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability Matrix</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+      ${matrixDetailsHtml}
+    </div>
+
+    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs);">Notes</h3>
     <div class="detail-notes-box">
-      <p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes || "No practice notes entered."}</p>
+      <p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes || "No practice notes entered"}</p>
     </div>
 
-    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Weekly Injection Log History</h3>
+    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Weekly Injection Log History</h3>
     ${logsHtml}
   `;
 
@@ -520,16 +605,39 @@ function openPatientDetails(patientId) {
 
 // 5. Patient Add/Edit Form Logic
 
+// Intercept checkbox changes inside Patient modal availability table
+function bindFormCheckboxesBehavior() {
+  const table = document.getElementById("availability-rounds-table");
+  if (!table) return;
+
+  const checkboxes = table.querySelectorAll(".avail-day-checkbox");
+  checkboxes.forEach(cb => {
+    cb.addEventListener("change", (e) => {
+      const selectWrapper = cb.closest(".availability-row").querySelector("select");
+      if (selectWrapper) {
+        selectWrapper.disabled = !cb.checked;
+        if (cb.checked) {
+          selectWrapper.style.backgroundColor = "var(--color-canvas)";
+        } else {
+          selectWrapper.style.backgroundColor = "";
+        }
+      }
+    });
+  });
+}
+
 function openAddPatientForm() {
   document.getElementById("patient-form").reset();
   document.getElementById("form-patient-id").value = "";
   document.getElementById("modal-title-label").textContent = "Add Patient Profile";
   document.getElementById("delete-patient-btn").style.display = "none";
   
-  // Reset alarm multi-select chips styling
-  document.querySelectorAll(".weekday-chip span").forEach(span => {
-    span.style.backgroundColor = "";
-    span.style.color = "";
+  // Disable all round dropdowns initially (except Sunday which default checked in HTML template is not present)
+  const selectDropdowns = document.querySelectorAll("#availability-rounds-table select");
+  selectDropdowns.forEach(sel => {
+    sel.disabled = true;
+    sel.value = "1";
+    sel.style.backgroundColor = "";
   });
 
   openModal("patient-modal-overlay");
@@ -545,20 +653,32 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-name").value = patient.name;
   document.getElementById("p-dob").value = patient.dob;
   document.getElementById("p-phone").value = patient.phone;
-  document.getElementById("p-medicine").value = patient.medicine;
-  document.getElementById("p-dose").value = patient.dose;
-  document.getElementById("p-site").value = patient.site;
   document.getElementById("p-usual-day").value = patient.usualDay;
-  document.getElementById("p-usual-time").value = patient.usualTime;
+  document.getElementById("p-usual-round").value = patient.usualRound;
   document.getElementById("p-notes").value = patient.notes || "";
 
-  // Set multiselect weekday alarm chips
-  const checkboxes = document.querySelectorAll('input[name="p-available-days"]');
-  checkboxes.forEach(cb => {
-    cb.checked = patient.availableDays.includes(cb.value);
+  // Set clinic availability checkboxes and round dropdowns
+  WEEKDAYS.forEach(day => {
+    const cb = document.querySelector(`.avail-day-checkbox[value="${day}"]`);
+    const select = document.querySelector(`select[name="p-day-round-${day}"]`);
+    
+    if (cb && select) {
+      const isDayActive = patient.schedules[day] !== undefined;
+      cb.checked = isDayActive;
+      select.disabled = !isDayActive;
+      
+      if (isDayActive) {
+        select.value = String(patient.schedules[day]);
+        select.style.backgroundColor = "var(--color-canvas)";
+      } else {
+        select.value = "1";
+        select.style.backgroundColor = "";
+      }
+    }
   });
 
   document.getElementById("delete-patient-btn").style.display = "block";
+  
   // Bind delete behavior
   document.getElementById("delete-patient-btn").onclick = () => {
     if (confirm(`Are you absolutely sure you want to delete ${patient.name}'s entire profile? This cannot be undone`)) {
@@ -566,6 +686,7 @@ function openEditPatientForm(patientId) {
       saveToLocalStorage();
       closeModal("patient-modal-overlay");
       renderMonthlyCalendar();
+      if (selectedDate) renderDailyAgenda(selectedDate);
       renderPatientDirectory();
     }
   };
@@ -581,22 +702,24 @@ function handleFormSubmit(e) {
   const name = document.getElementById("p-name").value;
   const dob = document.getElementById("p-dob").value;
   const phone = document.getElementById("p-phone").value;
-  const medicine = document.getElementById("p-medicine").value;
-  const dose = document.getElementById("p-dose").value;
-  const site = document.getElementById("p-site").value;
   const usualDay = document.getElementById("p-usual-day").value;
-  const usualTime = document.getElementById("p-usual-time").value;
+  const usualRound = parseInt(document.getElementById("p-usual-round").value);
   const notes = document.getElementById("p-notes").value;
 
-  // Retrieve multiselect weekdays
-  const availableDays = [];
-  document.querySelectorAll('input[name="p-available-days"]:checked').forEach(cb => {
-    availableDays.push(cb.value);
+  // Retrieve multiselect availability weekdays and custom rounds
+  const schedules = {};
+  
+  WEEKDAYS.forEach(day => {
+    const cb = document.querySelector(`.avail-day-checkbox[value="${day}"]`);
+    const select = document.querySelector(`select[name="p-day-round-${day}"]`);
+    if (cb && cb.checked && select) {
+      schedules[day] = parseInt(select.value);
+    }
   });
 
-  if (availableDays.length === 0) {
-    alert("Please select at least one available clinic day for weekly scheduling");
-    return;
+  // Guarantee that the Preferred Usual day is also present in schedules
+  if (schedules[usualDay] === undefined) {
+    schedules[usualDay] = usualRound;
   }
 
   if (id) {
@@ -605,14 +728,14 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, dob, phone, medicine, dose, site, availableDays, usualDay, usualTime, notes
+        name, dob, phone, usualDay, usualRound, schedules, notes
       };
     }
   } else {
     // Create new profile
     const newPatient = {
       id: "pat_" + Date.now(),
-      name, dob, phone, medicine, dose, site, availableDays, usualDay, usualTime, notes,
+      name, dob, phone, usualDay, usualRound, schedules, notes,
       injectionLogs: []
     };
     patients.push(newPatient);
@@ -621,6 +744,7 @@ function handleFormSubmit(e) {
   saveToLocalStorage();
   closeModal("patient-modal-overlay");
   renderMonthlyCalendar();
+  if (selectedDate) renderDailyAgenda(selectedDate);
   renderPatientDirectory();
 }
 
@@ -635,12 +759,66 @@ function closeModal(modalId) {
   document.body.style.overflow = "";
 }
 
+// Bind Collapsible Mobile Left Drawer Toggle controls
+function initializeDrawerNavigation() {
+  const toggleBtn = document.getElementById("drawer-toggle-btn");
+  const closeBtn = document.getElementById("drawer-close-btn");
+  const drawerOverlay = document.getElementById("nav-drawer-overlay");
+  const drawer = document.getElementById("nav-drawer");
+  const drawerItems = document.querySelectorAll(".drawer-item");
+
+  if (!toggleBtn || !drawer || !closeBtn || !drawerOverlay) return;
+
+  function openDrawer() {
+    drawer.classList.add("active");
+    drawerOverlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove("active");
+    drawerOverlay.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  toggleBtn.addEventListener("click", openDrawer);
+  closeBtn.addEventListener("click", closeDrawer);
+  drawerOverlay.addEventListener("click", closeDrawer);
+
+  drawerItems.forEach(item => {
+    item.addEventListener("click", (e) => {
+      closeDrawer();
+      
+      // Update active highlight classes on links
+      drawerItems.forEach(i => i.classList.remove("active"));
+      item.classList.add("active");
+
+      // Match the main header global nav items too
+      const href = item.getAttribute("href");
+      document.querySelectorAll(".nav-item").forEach(navLink => {
+        navLink.classList.remove("active");
+        if (navLink.getAttribute("href") === href) {
+          navLink.classList.add("active");
+        }
+      });
+    });
+  });
+
+  // Make logo brand button scroll home
+  const logoBtn = document.getElementById("logo-brand-btn");
+  if (logoBtn) {
+    logoBtn.addEventListener("click", () => {
+      window.scrollTo(0, 0);
+    });
+  }
+}
+
 // 7. Samsung Smart Watch Sync & Web Notification Engine
 
 // Standard browser notifications permission flow
 function requestNotificationPermission() {
   if (!("Notification" in window)) {
-    console.log("This browser does not support local desktop notifications.");
+    console.log("This browser does not support local desktop notifications");
     return;
   }
 
@@ -662,6 +840,7 @@ function requestNotificationPermission() {
 function updateNotificationStatus(type, text) {
   const box = document.getElementById("notification-status");
   const textEl = document.getElementById("status-text");
+  if (!box || !textEl) return;
 
   box.className = `notification-status-box ${type}`;
   textEl.textContent = text;
@@ -670,46 +849,48 @@ function updateNotificationStatus(type, text) {
 // Trigger an immediate custom notification listing today's schedules (perfect for testing phone/watch sync)
 function triggerTestNotification() {
   if (Notification.permission !== "granted") {
-    // Request permission if not yet approved
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
         updateNotificationStatus("success", "Notifications Enabled (Approved)");
-        fireScheduledNotification(true); // Forced test notification
+        fireRoundScheduledNotification(1, true); // Forced test notification
       } else {
         alert("Please enable notification permissions in your browser to test watch sync");
       }
     });
   } else {
-    fireScheduledNotification(true); // Forced test notification
+    fireRoundScheduledNotification(1, true); // Forced test notification
   }
 }
 
-// Fires the system alarm notification listing patients scheduled for today
-function fireScheduledNotification(isForcedTest = false) {
+// Fires the system alarm notification listing patients scheduled for a specific round today
+function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
   const todayDate = new Date();
-  const dayIndex = todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1; // Mon=0, Sun=6
+  const dayIndex = todayDate.getDay(); // Sun=0, Mon=1, etc.
   const todayDayName = WEEKDAYS[dayIndex];
 
-  // Find patients due for injection today
-  const dueToday = patients.filter(p => p.usualDay === todayDayName);
+  // Find patients due for injection today in this specific round
+  const dueThisRound = patients.filter(p => {
+    const mappedRound = p.schedules[todayDayName];
+    return mappedRound !== undefined && parseInt(mappedRound) === roundNum;
+  });
 
-  let title = "Vial Medicine Tracker";
+  let title = `Vial Round ${roundNum} Alarm`;
   let body = "";
 
   if (isForcedTest) {
-    title = "Vial — Watch Sync Success";
-    if (dueToday.length === 0) {
-      body = `Diagnostic complete! Note received on watch (No patients scheduled for today) Total active database: ${patients.length} patients`;
+    title = "Vial — Smart Watch Sync Verified";
+    if (dueThisRound.length === 0) {
+      body = `Diagnostic complete! Test note received on watch (No Round ${roundNum} patients scheduled today) Total patient database: ${patients.length} records`;
     } else {
-      const namesList = dueToday.map(p => `${p.name} (${p.usualTime})`).join(", ");
-      body = `Daily Check: ${dueToday.length} patients scheduled today: ${namesList}`;
+      const namesList = dueThisRound.map(p => p.name).join(", ");
+      body = `Round ${roundNum} diagnostic alert: ${dueThisRound.length} scheduled: ${namesList}`;
     }
   } else {
-    if (dueToday.length === 0) {
-      body = "Good morning! No patient medicine injections are scheduled for today";
+    if (dueThisRound.length === 0) {
+      return; // Do not push spam alerts if nobody is scheduled in this round
     } else {
-      const namesList = dueToday.map(p => `${p.name} (${p.usualTime} - ${p.medicine})`).join(", ");
-      body = `Morning Alert: ${dueToday.length} patients scheduled today: ${namesList}`;
+      const namesList = dueThisRound.map(p => p.name).join(", ");
+      body = `Round ${roundNum} starting: ${dueThisRound.length} patient injections due: ${namesList}`;
     }
   }
 
@@ -719,11 +900,11 @@ function fireScheduledNotification(isForcedTest = false) {
       body: body,
       icon: "icon-192.png",
       badge: "icon-192.png",
-      tag: "vial-morning-alarm",
+      tag: `vial-round-alarm-${roundNum}-${formatDateString(todayDate)}`,
       requireInteraction: true // Keeps notification visible on OS/Watch until checked
     };
 
-    // PWA Upgrade: Use service worker registration if active for highly stable mobile/watch notifications
+    // PWA: Use service worker registration if active for highly stable mobile/watch notifications
     if ("serviceWorker" in navigator && navigator.serviceWorker.ready) {
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(title, options);
@@ -731,17 +912,17 @@ function fireScheduledNotification(isForcedTest = false) {
     } else {
       new Notification(title, options);
     }
-    console.log("System notification fired successfully");
+    console.log(`System round ${roundNum} notification fired successfully`);
   } else {
     // Fallback in-app alert
     alert(`${title}\n\n${body}`);
   }
 }
 
-// Morning scheduler setup (checks if it's 7:00 AM every minute)
-let lastNotificationDate = ""; // Prevents double-firing within the 7:00 AM minute
+// Background scheduler time watcher: checks every 30 seconds
+let lastAlarmFiredStr = ""; // Tracks "YYYY-MM-DD_Round#" to prevent double alerts inside the same minute
 
-function startMorningScheduler() {
+function startAlarmTimeWatcher() {
   setInterval(() => {
     const alarmActive = document.getElementById("alarm-toggle").checked;
     if (!alarmActive) return;
@@ -750,28 +931,112 @@ function startMorningScheduler() {
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const todayStr = formatDateString(now);
+    
+    // Construct time string "HH:MM"
+    let hStr = String(hours);
+    let mStr = String(minutes);
+    if (hStr.length < 2) hStr = "0" + hStr;
+    if (mStr.length < 2) mStr = "0" + mStr;
+    const timeNow = `${hStr}:${mStr}`;
 
-    // Trigger at 7:00 AM exactly
-    if (hours === 7 && minutes === 0 && lastNotificationDate !== todayStr) {
-      lastNotificationDate = todayStr;
-      fireScheduledNotification(false);
+    // Read alert times configured in Settings page
+    const r1Time = document.getElementById("alarm-time-r1").value;
+    const r2Time = document.getElementById("alarm-time-r2").value;
+    const r3Time = document.getElementById("alarm-time-r3").value;
+
+    // Check Round 1
+    if (timeNow === r1Time && lastAlarmFiredStr !== `${todayStr}_R1`) {
+      lastAlarmFiredStr = `${todayStr}_R1`;
+      fireRoundScheduledNotification(1, false);
     }
-  }, 30000); // Check every 30 seconds
+    // Check Round 2
+    if (timeNow === r2Time && lastAlarmFiredStr !== `${todayStr}_R2`) {
+      lastAlarmFiredStr = `${todayStr}_R2`;
+      fireRoundScheduledNotification(2, false);
+    }
+    // Check Round 3
+    if (timeNow === r3Time && lastAlarmFiredStr !== `${todayStr}_R3`) {
+      lastAlarmFiredStr = `${todayStr}_R3`;
+      fireRoundScheduledNotification(3, false);
+    }
+
+  }, 30000); // Poll clock check twice a minute
+}
+
+// Initialize Custom Round Times from Local Storage on load
+function loadSettingsConfig() {
+  const alarmState = localStorage.getItem("vial_alarm_enabled");
+  if (alarmState !== null) {
+    document.getElementById("alarm-toggle").checked = alarmState === "true";
+  }
+
+  const r1 = localStorage.getItem("vial_alarm_r1") || "06:50";
+  const r2 = localStorage.getItem("vial_alarm_r2") || "10:50";
+  const r3 = localStorage.getItem("vial_alarm_r3") || "12:50";
+
+  document.getElementById("alarm-time-r1").value = r1;
+  document.getElementById("alarm-time-r2").value = r2;
+  document.getElementById("alarm-time-r3").value = r3;
+
+  // Bind change events to persist configurations
+  document.getElementById("alarm-toggle").addEventListener("change", (e) => {
+    localStorage.setItem("vial_alarm_enabled", e.target.checked);
+  });
+  document.getElementById("alarm-time-r1").addEventListener("change", (e) => {
+    localStorage.setItem("vial_alarm_r1", e.target.value);
+  });
+  document.getElementById("alarm-time-r2").addEventListener("change", (e) => {
+    localStorage.setItem("vial_alarm_r2", e.target.value);
+  });
+  document.getElementById("alarm-time-r3").addEventListener("change", (e) => {
+    localStorage.setItem("vial_alarm_r3", e.target.value);
+  });
+
+  // Bind clear database operations button
+  const clearDbBtn = document.getElementById("clear-database-btn");
+  if (clearDbBtn) {
+    clearDbBtn.addEventListener("click", () => {
+      const confirm1 = confirm("Are you sure you want to permanently clear all patient data? This will erase all logs and configurations");
+      if (confirm1) {
+        const confirm2 = confirm("This action cannot be undone. Are you absolutely certain you wish to wipe the entire clinical database?");
+        if (confirm2) {
+          patients = [];
+          saveToLocalStorage();
+          renderMonthlyCalendar();
+          if (selectedDate) renderDailyAgenda(selectedDate);
+          renderPatientDirectory();
+          alert("Clinical database has been completely purged");
+        }
+      }
+    });
+  }
 }
 
 // 8. Application Initializer on DOM Load
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize current viewed month to first of current month
   const today = new Date();
+  
+  // Set currentMonth calendar header anchor, and default select selectedDate as today
   currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  selectedDate = today;
 
   // Seed database
   seedDatabase();
 
+  // Load alert timings
+  loadSettingsConfig();
+
   // Core Renderers
   updateDashboardStats();
   renderMonthlyCalendar();
+  renderDailyAgenda(selectedDate);
   renderPatientDirectory();
+
+  // Bind interactive modal available days checkboxes dropdown behaviors
+  bindFormCheckboxesBehavior();
+
+  // Bind left collapsible drawer toggle navigation (Midori-style)
+  initializeDrawerNavigation();
 
   // 9. Event Listeners binding
 
@@ -825,8 +1090,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Prompt notification permission request slightly after load
   setTimeout(requestNotificationPermission, 2000);
 
-  // Start morning clock trigger
-  startMorningScheduler();
+  // Start background alarms watcher
+  startAlarmTimeWatcher();
 
   // Smooth local navigation links highlighting
   window.addEventListener("scroll", () => {

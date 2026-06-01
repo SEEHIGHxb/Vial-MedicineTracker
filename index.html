@@ -29,10 +29,45 @@
 </head>
 <body>
 
+  <!-- Left Slide-Over Drawer Navigation Menu (Midori mobile ledger style) -->
+  <div class="nav-drawer-overlay" id="nav-drawer-overlay"></div>
+  <div class="nav-drawer" id="nav-drawer">
+    <div class="drawer-header">
+      <div class="drawer-brand">
+        <!-- Minimalist Vial Logo -->
+        <svg class="brand-logo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 3h12M8 3v3M16 3v3M10 6v15M14 6v15M7 21h10"/>
+        </svg>
+        <span class="brand-text">Vial</span>
+      </div>
+      <button class="drawer-close-btn" id="drawer-close-btn" aria-label="Close drawer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="drawer-menu">
+      <a href="#overview-section" class="drawer-item active">Dashboard</a>
+      <a href="#calendar-section" class="drawer-item">Calendar</a>
+      <a href="#database-section" class="drawer-item">Patients</a>
+      <a href="#settings-section" class="drawer-item">Settings</a>
+    </div>
+  </div>
+
   <!-- 1. Global Navigation Bar (Apple global-nav style) -->
   <nav class="global-nav" id="global-nav">
     <div class="nav-container">
-      <div class="nav-brand">
+      <!-- Hamburger Menu Toggle Button (Mobile visible only) -->
+      <button class="hamburger-btn" id="drawer-toggle-btn" aria-label="Open Navigation Drawer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="4" y1="6" x2="20" y2="6"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+          <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+      </button>
+      
+      <div class="nav-brand" id="logo-brand-btn">
         <!-- Minimalist Vial Logo -->
         <svg class="brand-logo" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 3h12M8 3v3M16 3v3M10 6v15M14 6v15M7 21h10"/>
@@ -43,7 +78,7 @@
         <a href="#overview-section" class="nav-item active">Overview</a>
         <a href="#calendar-section" class="nav-item">Calendar</a>
         <a href="#database-section" class="nav-item">Patients</a>
-        <a href="#settings-section" class="nav-item">Watch Sync</a>
+        <a href="#settings-section" class="nav-item">Settings</a>
       </div>
     </div>
   </nav>
@@ -113,7 +148,7 @@
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </div>
-            <span class="calendar-week-range" id="calendar-month-label">May 2026</span>
+            <span class="calendar-week-range" id="calendar-month-label">June 2026</span>
             <div class="calendar-nav-btn" id="next-month-btn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -124,6 +159,20 @@
           <!-- The Monthly Day Grid -->
           <div class="monthly-grid" id="monthly-calendar-grid">
             <!-- Dynamically generated month grid will be injected here -->
+          </div>
+        </div>
+
+        <!-- Selected Day Agenda Checklist Section (Google Calendar details panel style) -->
+        <div class="agenda-wrapper" id="agenda-section">
+          <div class="agenda-header">
+            <div class="agenda-title-group">
+              <span class="agenda-date-subtitle" id="agenda-date-subtitle">Selected Day Queue</span>
+              <h3 class="agenda-date-title" id="agenda-date-title">Sunday, 31 May 2026</h3>
+            </div>
+            <div class="agenda-stats-pill" id="agenda-stats-pill">0 of 0 Completed</div>
+          </div>
+          <div class="agenda-list" id="agenda-patients-list">
+            <!-- Populated dynamically via app.js -->
           </div>
         </div>
       </div>
@@ -143,7 +192,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" class="search-input" id="patient-search-input" placeholder="Search by name, medicine, or site...">
+            <input type="text" class="search-input" id="patient-search-input" placeholder="Search by name, rounds, or notes...">
           </div>
           
           <div class="filter-chips-wrapper">
@@ -163,38 +212,54 @@
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
             <p class="empty-title">No Patients Found</p>
-            <p class="empty-desc">Create your first patient to start tracking weekly injections.</p>
+            <p class="empty-desc">Create your first patient to start tracking weekly injections</p>
             <button class="button-primary" id="empty-add-btn">Add Patient</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 6. Section 4: Watch Sync & Notifications (Parchment Canvas) -->
+    <!-- 6. Section 4: System Settings & Watch Integration (Parchment Canvas) -->
     <section class="product-tile-parchment" id="settings-section">
       <div class="tile-content settings-tile-content">
-        <p class="tagline">Samsung Smart Watch Integration</p>
-        <h2 class="display-lg">Notifications mirrored instantly</h2>
-        <p class="lead">Send automatically scheduled alerts at 7:00 AM daily directly to your watch screen</p>
+        <p class="tagline">System Settings & Watch Sync</p>
+        <h2 class="display-lg">Control your clinical panel</h2>
+        <p class="lead">Send automatically scheduled alerts directly to your watch screen</p>
         
         <div class="settings-layout-grid">
-          <!-- Notification Status Card -->
+          <!-- Notification Status & Round Times Customizer -->
           <div class="store-utility-card notification-card">
             <div class="settings-card-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              <h3>Daily Alarm Settings</h3>
+              <h3>Round Alarms Configuration</h3>
             </div>
-            <p class="settings-card-desc">When active, the app checks at the start of the day (7:00 AM) and triggers system notifications listing patients scheduled to receive their weekly medicine injection today</p>
+            <p class="settings-card-desc">When active, the app queries your schedules and fires notification summaries exactly 10 minutes before each round starts (checks every day)</p>
             
             <div class="setting-toggle-row">
-              <span class="setting-label">Daily 7:00 AM Injection Alerts</span>
+              <span class="setting-label">Enable Round Alerts</span>
               <label class="switch-container">
                 <input type="checkbox" id="alarm-toggle" checked>
                 <span class="switch-slider"></span>
               </label>
+            </div>
+
+            <!-- Custom Round Alarm Times -->
+            <div class="round-times-configurator">
+              <div class="round-time-input-group">
+                <label for="alarm-time-r1">Round 1 Alert Time</label>
+                <input type="time" id="alarm-time-r1" class="form-input-text" value="06:50">
+              </div>
+              <div class="round-time-input-group">
+                <label for="alarm-time-r2">Round 2 Alert Time</label>
+                <input type="time" id="alarm-time-r2" class="form-input-text" value="10:50">
+              </div>
+              <div class="round-time-input-group">
+                <label for="alarm-time-r3">Round 3 Alert Time</label>
+                <input type="time" id="alarm-time-r3" class="form-input-text" value="12:50">
+              </div>
             </div>
             
             <div class="notification-status-box success" id="notification-status">
@@ -205,7 +270,7 @@
             <button class="button-primary-accent" id="trigger-test-notif-btn">Test Instant Watch Notice</button>
           </div>
 
-          <!-- Watch Sync Guide Card -->
+          <!-- Watch Sync Guide & Data Purge Card -->
           <div class="store-utility-card watch-guide-card">
             <div class="settings-card-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
@@ -213,22 +278,35 @@
                 <line x1="6" y1="6" x2="18" y2="6"></line>
                 <line x1="6" y1="18" x2="18" y2="18"></line>
               </svg>
-              <h3>How to Sync Samsung Smart Watch</h3>
+              <h3>Watch Sync & Operations</h3>
             </div>
             
             <div class="guide-steps-list">
               <div class="guide-step">
                 <span class="step-num">1</span>
-                  <p><strong>Standard Browser Prompts:</strong> Grant notification permissions when prompted. Standard web notifications are triggered directly by your desktop or mobile browser</p>
+                <p><strong>Standard Browser Prompts:</strong> Grant notification permissions. Alarms trigger standard system notices</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">2</span>
-                  <p><strong>For Windows (Phone Link):</strong> Connect your Samsung/Android phone using the <em>Link to Windows</em> application. Standard notifications on your PC will mirror to your phone</p>
+                <p><strong>For Windows (Phone Link):</strong> Connect your phone using <em>Link to Windows</em>. PC notifications will mirror automatically</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">3</span>
-                  <p><strong>Galaxy Wearable Sync:</strong> Open the <em>Galaxy Wearable</em> app on your phone, go to **Watch settings > Notifications**, and ensure notification forwarding is enabled for your phone's browser or Phone Link app</p>
+                <p><strong>Galaxy Wearable Sync:</strong> In the <em>Galaxy Wearable</em> app, ensure notification forwarding is enabled for your phone's browser or Phone Link app</p>
               </div>
+            </div>
+
+            <!-- Database Operations -->
+            <div class="database-operations-box">
+              <h4>Database Operations</h4>
+              <p class="settings-card-desc" style="margin-bottom: var(--spacing-xs);">Permanently wipe all patients, custom daily schedules, and injection history from your local sandbox storage</p>
+              <button class="button-pearl-capsule" id="clear-database-btn" style="color: #ff3b30; border-color: rgba(255, 59, 48, 0.15); background-color: rgba(255, 59, 48, 0.02); width: 100%; justify-content: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Clear Patient Database
+              </button>
             </div>
           </div>
         </div>
@@ -242,7 +320,7 @@
     <div class="patient-modal-sheet">
       <div class="modal-header">
         <h2 class="modal-title" id="modal-title-label">Add Patient Profile</h2>
-        <button class="button-icon-circular" id="close-modal-btn">
+        <button class="button-icon-circular" id="close-modal-btn" aria-label="Close modal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -274,87 +352,142 @@
         </div>
 
         <div class="form-section">
-          <h3>Medicine & Injection Specification</h3>
-          
-          <div class="input-group">
-            <label for="p-medicine">Medicine Name</label>
-            <input type="text" id="p-medicine" class="form-input-text" required placeholder="e.g., B12 Methylcobalamin, Ozempic">
-          </div>
-
-          <div class="input-row-grid">
-            <div class="input-group">
-              <label for="p-dose">Dose Quantity</label>
-              <input type="text" id="p-dose" class="form-input-text" required placeholder="e.g., 1000 mcg, 0.5 mL">
-            </div>
-            <div class="input-group">
-              <label for="p-site">Preferred Site</label>
-              <input type="text" id="p-site" class="form-input-text" required placeholder="e.g., Left Deltoid, Right Abdomen">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
           <h3>Scheduling & Clinic Availability</h3>
           
-          <div class="input-group">
-            <label>Available Days (Weekly Multi-Select)</label>
-            <p class="input-hint">Select the days the patient is available to come into the clinic</p>
-            <div class="weekday-chips-grid">
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Mon">
-                <span>Mon</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Tue">
-                <span>Tue</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Wed">
-                <span>Wed</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Thu">
-                <span>Thu</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Fri">
-                <span>Fri</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Sat">
-                <span>Sat</span>
-              </label>
-              <label class="weekday-chip">
-                <input type="checkbox" name="p-available-days" value="Sun">
-                <span>Sun</span>
-              </label>
+          <!-- Primary Preferred Schedule Highlight Box -->
+          <div class="preferred-schedule-box">
+            <h4 class="box-title">Primary Preferred Schedule</h4>
+            <p class="box-subtitle">Specify the primary preferred day and round for this patient</p>
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
+              <div class="input-group">
+                <label for="p-usual-day">Preferred Injection Day</label>
+                <select id="p-usual-day" class="form-select-pill">
+                  <option value="Sun">Sunday</option>
+                  <option value="Mon">Monday</option>
+                  <option value="Tue">Tuesday</option>
+                  <option value="Wed">Wednesday</option>
+                  <option value="Thu">Thursday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="p-usual-round">Preferred Round</label>
+                <select id="p-usual-round" class="form-select-pill">
+                  <option value="1">Round 1</option>
+                  <option value="2">Round 2</option>
+                  <option value="3">Round 3</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="input-row-grid">
-            <div class="input-group">
-              <label for="p-usual-day">Preferred Injection Day</label>
-              <select id="p-usual-day" class="form-select-pill">
-                <option value="Mon">Monday</option>
-                <option value="Tue">Tuesday</option>
-                <option value="Wed">Wednesday</option>
-                <option value="Thu">Thursday</option>
-                <option value="Fri">Friday</option>
-                <option value="Sat">Saturday</option>
-                <option value="Sun">Sunday</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label for="p-usual-time">Preferred Time</label>
-              <input type="time" id="p-usual-time" class="form-input-text" required value="09:00">
+          <!-- Dynamic Clinic Availability & Custom Rounds Grid -->
+          <div class="input-group" style="margin-top: var(--spacing-lg);">
+            <label>Clinic Availability & Round Schedules</label>
+            <p class="input-hint">Enable clinic days for this patient and select their scheduled round (1-3) for each day</p>
+            
+            <div class="availability-rounds-table" id="availability-rounds-table">
+              <!-- Sunday to Saturday rows -->
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Sun" class="avail-day-checkbox">
+                  <span class="day-name">Sunday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Sun" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2" selected>Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Mon" class="avail-day-checkbox">
+                  <span class="day-name">Monday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Mon" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Tue" class="avail-day-checkbox">
+                  <span class="day-name">Tuesday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Tue" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Wed" class="avail-day-checkbox">
+                  <span class="day-name">Wednesday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Wed" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Thu" class="avail-day-checkbox">
+                  <span class="day-name">Thursday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Thu" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Fri" class="avail-day-checkbox">
+                  <span class="day-name">Friday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Fri" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="availability-check-label">
+                  <input type="checkbox" name="p-available-days" value="Sat" class="avail-day-checkbox">
+                  <span class="day-name">Saturday</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Sat" class="form-select-pill-sm" disabled>
+                    <option value="1" selected>Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="form-section">
-          <h3>Medical Practice Notes</h3>
+          <h3>Notes</h3>
           <div class="input-group">
-            <label for="p-notes">Special Practice Notes</label>
+            <label for="p-notes">Notes</label>
             <textarea id="p-notes" class="form-textarea" placeholder="Add specific patient notes, clinical parameters, allergies or pre-injection procedures..."></textarea>
           </div>
         </div>
@@ -375,7 +508,7 @@
     <div class="patient-detail-card-sheet">
       <div class="modal-header">
         <h2 class="modal-title">Patient Profile</h2>
-        <button class="button-icon-circular" id="close-detail-btn">
+        <button class="button-icon-circular" id="close-detail-btn" aria-label="Close modal">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -403,7 +536,7 @@
           <a href="#overview-section" class="footer-link">Overview Dashboard</a>
           <a href="#calendar-section" class="footer-link">Monthly Calendar</a>
           <a href="#database-section" class="footer-link">Patient Database</a>
-          <a href="#settings-section" class="footer-link">Smart Watch Setup</a>
+          <a href="#settings-section" class="footer-link">System Settings</a>
         </div>
         <div class="footer-col">
           <span class="footer-col-title">Clinical Tools</span>

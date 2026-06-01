@@ -1526,3 +1526,515 @@ input:checked + .switch-slider:before {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   15. Redesigned Mobile Drawer, Compact Calendar & Agenda Panel Styles
+   ========================================================================== */
+
+/* Hamburger Button */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-on-dark);
+  cursor: pointer;
+  padding: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: flex;
+  }
+  .nav-menu {
+    display: none !important; /* Hide global desktop nav */
+  }
+}
+
+/* Nav Drawer Slide-Over Menu (Midori ledger mobile style) */
+.nav-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.nav-drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  background-color: rgba(245, 245, 247, 0.88); /* Parchment color glassmorphism */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1001;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-hairline);
+}
+
+.nav-drawer.active {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-hairline);
+  height: 52px;
+  background-color: var(--color-surface-black);
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-on-dark);
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  color: #a1a1a6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.drawer-close-btn:hover {
+  color: var(--color-on-dark);
+}
+
+.drawer-menu {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-md) 0;
+  gap: 4px;
+}
+
+.drawer-item {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-ink-muted-80);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.drawer-item:hover, .drawer-item.active {
+  background-color: rgba(0, 102, 204, 0.05);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Compact Calendar Grid Adjustments */
+.monthly-grid {
+  min-height: auto; /* Allow flexible height fit */
+}
+
+.monthly-day-cell {
+  min-height: 70px;
+  cursor: pointer;
+}
+
+.monthly-day-cell:hover {
+  background-color: var(--color-surface-pearl);
+}
+
+.monthly-day-cell.selected-day {
+  background-color: rgba(0, 102, 204, 0.04);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+}
+
+/* Dots container representing injections */
+.calendar-dots-container {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.calendar-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.calendar-indicator-dot.pending {
+  background-color: var(--color-primary);
+}
+
+.calendar-indicator-dot.completed {
+  background-color: var(--color-success);
+}
+
+/* Selected Day Agenda Panel style */
+.agenda-wrapper {
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  width: 100%;
+  text-align: left;
+  animation: slideDownFade 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agenda-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-hairline);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.agenda-date-subtitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.agenda-date-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.agenda-stats-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: rgba(0, 102, 204, 0.06);
+  padding: 4px 12px;
+  border-radius: var(--rounded-pill);
+}
+
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Round Groups in Agenda */
+.agenda-round-group {
+  margin-bottom: var(--spacing-xs);
+}
+
+.agenda-round-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink-muted-48);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-divider-soft);
+  padding-bottom: 4px;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Agenda Patient Item Row */
+.agenda-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-surface-pearl);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.2s ease;
+  margin-bottom: var(--spacing-xs);
+}
+
+.agenda-item:hover {
+  border-color: #b5b5ba;
+  background-color: var(--color-canvas);
+}
+
+.agenda-item.completed {
+  background-color: rgba(52, 199, 89, 0.02);
+  border-color: rgba(52, 199, 89, 0.12);
+}
+
+.agenda-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.agenda-checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Apple styled agenda checkbox */
+.agenda-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: transparent;
+  background-color: var(--color-canvas);
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.agenda-checkbox:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(0, 102, 204, 0.02);
+}
+
+.agenda-item.completed .agenda-checkbox {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-on-primary);
+}
+
+.agenda-patient-details-link {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.agenda-patient-details-link:hover {
+  color: var(--color-primary);
+}
+
+.agenda-item.completed .agenda-patient-details-link {
+  text-decoration: line-through;
+  color: var(--color-ink-muted-48);
+  font-weight: 400;
+}
+
+.agenda-item-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.agenda-round-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-48);
+  border: 1px solid var(--color-hairline);
+  padding: 2px 8px;
+  border-radius: var(--rounded-pill);
+}
+
+/* Redesigned Form Schedules Grid & Highlights */
+.preferred-schedule-box {
+  background-color: rgba(0, 102, 204, 0.02);
+  border: 1.5px dashed rgba(0, 102, 204, 0.2);
+  border-radius: var(--rounded-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  text-align: left;
+}
+
+.preferred-schedule-box .box-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 2px;
+}
+
+.preferred-schedule-box .box-subtitle {
+  font-size: 12px;
+  color: var(--color-ink-muted-48);
+}
+
+/* Weekday Table Grid */
+.availability-rounds-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  overflow: hidden;
+  margin-top: var(--spacing-xs);
+  background-color: var(--color-canvas);
+  text-align: left;
+}
+
+.availability-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-divider-soft);
+  transition: background-color 0.2s ease;
+}
+
+.availability-row:last-child {
+  border-bottom: none;
+}
+
+.availability-row:hover {
+  background-color: var(--color-surface-pearl);
+}
+
+.availability-check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+  flex-grow: 1;
+}
+
+.availability-check-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1.5px solid var(--color-hairline);
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.availability-round-select-wrapper {
+  min-width: 110px;
+}
+
+.form-select-pill-sm {
+  width: 100%;
+  height: 32px;
+  border-radius: var(--rounded-pill);
+  border: 1px solid var(--color-hairline);
+  background-color: var(--color-surface-pearl);
+  font-size: 13px;
+  padding: 0 var(--spacing-xs);
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-select-pill-sm:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-canvas);
+}
+
+.form-select-pill-sm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Custom Round Times Inputs in Settings */
+.round-times-configurator {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  text-align: left;
+}
+
+.round-time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.round-time-input-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-ink-muted-48);
+  letter-spacing: 0.05em;
+}
+
+.round-time-input-group input[type="time"] {
+  height: 38px;
+  border-radius: var(--rounded-pill);
+  border: 1px solid var(--color-hairline);
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  background-color: var(--color-surface-pearl);
+}
+
+.round-time-input-group input[type="time"]:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-canvas);
+}
+
+/* Database operations container style */
+.database-operations-box {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px dashed var(--color-hairline);
+  text-align: left;
+}
+
+.database-operations-box h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+/* Responsive adjustment for compact screens */
+@media (max-width: 640px) {
+  .round-times-configurator {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+  }
+}
+
