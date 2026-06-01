@@ -393,7 +393,7 @@ function renderMonthlyCalendar() {
         iconWrapper.className = `calendar-patient-icon-wrapper ${iconColorClass}`;
         iconWrapper.title = `${patient.name} (Round ${patient.schedules[cellDayName]}) — ${statusText}`;
         iconWrapper.innerHTML = `
-          <svg class="calendar-patient-icon" viewBox="0 0 24 24">
+          <svg class="calendar-patient-icon" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="7" r="4"></circle>
             <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
           </svg>

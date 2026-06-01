@@ -1709,6 +1709,7 @@ input:checked + .switch-slider:before {
   width: 15px;
   height: 15px;
   display: block;
+  fill: currentColor; /* Ensure SVG inherits HSL colors from wrapper classes */
 }
 
 /* Dynamic Calendar Person Icon States */
