@@ -1685,28 +1685,47 @@ input:checked + .switch-slider:before {
   box-shadow: inset 0 0 0 1.5px var(--color-primary);
 }
 
-/* Dots container representing injections */
+/* Person icons container representing scheduled rounds & statuses */
 .calendar-dots-container {
   display: flex;
   justify-content: center;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
   flex-wrap: wrap;
 }
 
-.calendar-indicator-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
+.calendar-patient-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.calendar-indicator-dot.pending {
-  background-color: var(--color-primary);
+.calendar-patient-icon-wrapper:hover {
+  transform: scale(1.25);
 }
 
-.calendar-indicator-dot.completed {
-  background-color: var(--color-success);
+.calendar-patient-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+/* Dynamic Calendar Person Icon States */
+.calendar-patient-icon-wrapper.green {
+  color: var(--color-success); /* Injected today standard success green */
+}
+
+.calendar-patient-icon-wrapper.red {
+  color: var(--color-danger); /* Preferred day (Today) active alert red */
+}
+
+.calendar-patient-icon-wrapper.yellow {
+  color: #ff9500; /* Preferred day (Upcoming) warm priority amber-yellow */
+}
+
+.calendar-patient-icon-wrapper.transparent-grey {
+  color: rgba(29, 29, 31, 0.18); /* General available slots / muted slots after injection */
 }
 
 /* Selected Day Agenda Panel style */

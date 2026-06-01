@@ -229,7 +229,39 @@ function updateDashboardStats() {
   document.getElementById("sub-nav-stats").textContent = `${injectedThisWeek} of ${patients.length} Injected This Week`;
 }
 
-// Render the monthly calendar grid using compact indicator dots (Google Calendar Style)
+// Calculates the active preferred date for a patient in the week of cellDate
+function getPatientActivePreferredDate(patient, cellDate) {
+  const sunday = getStartOfWeek(cellDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 1. Get the primary preferred date for this week
+  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const preferredDate = new Date(sunday);
+  preferredDate.setDate(sunday.getDate() + dayIndex);
+  preferredDate.setHours(0, 0, 0, 0);
+
+  // 2. Check if primary preferred date has passed relative to today
+  if (preferredDate < today) {
+    // Has passed! Look for the next incoming scheduled day starting from today
+    // We check the next 7 days starting from today to find the first scheduled day
+    for (let offset = 0; offset < 7; offset++) {
+      const nextDate = new Date(today);
+      nextDate.setDate(today.getDate() + offset);
+      const nextDayName = WEEKDAYS[nextDate.getDay()];
+      
+      // Is the patient scheduled on this day?
+      if (patient.schedules[nextDayName] !== undefined) {
+        return nextDate;
+      }
+    }
+  }
+
+  // If it hasn't passed, or if no incoming day is found, return the primary preferred date
+  return preferredDate;
+}
+
+// Render the monthly calendar grid using compact indicator person SVG icons
 function renderMonthlyCalendar() {
   const gridContainer = document.getElementById("monthly-calendar-grid");
   if (!gridContainer) return;
@@ -300,7 +332,7 @@ function renderMonthlyCalendar() {
     numBubble.textContent = cellDate.getDate();
     cell.appendChild(numBubble);
 
-    // Indicators Dots Container for Scheduled Rounds
+    // Indicators Dots/Icons Container for Scheduled Rounds
     const dotsContainer = document.createElement("div");
     dotsContainer.className = "calendar-dots-container";
 
@@ -312,12 +344,61 @@ function renderMonthlyCalendar() {
 
     if (scheduledPatients.length > 0) {
       scheduledPatients.forEach(patient => {
-        const injectedThisWeek = isInjectedInWeekOfDate(patient, cellDate);
+        // 1. Check if patient has been injected this week
+        const sunday = getStartOfWeek(cellDate);
+        const weekStartStr = formatDateString(sunday);
+        const saturdayDate = new Date(sunday);
+        saturdayDate.setDate(sunday.getDate() + 6);
+        const weekEndStr = formatDateString(saturdayDate);
         
-        const dot = document.createElement("span");
-        dot.className = `calendar-indicator-dot ${injectedThisWeek ? "completed" : "pending"}`;
-        dot.title = `${patient.name} (Round ${patient.schedules[cellDayName]}) — ${injectedThisWeek ? "Completed" : "Pending"}`;
-        dotsContainer.appendChild(dot);
+        const actualInjectedDateStr = patient.injectionLogs.find(logDate => {
+          return logDate >= weekStartStr && logDate <= weekEndStr;
+        });
+
+        let iconColorClass = "";
+        let statusText = "";
+
+        if (actualInjectedDateStr !== undefined) {
+          // Patient HAS been injected this week!
+          if (cellDateStr === actualInjectedDateStr) {
+            iconColorClass = "green";
+            statusText = "Injected (This Date)";
+          } else {
+            iconColorClass = "transparent-grey";
+            statusText = "Clinic Available (Injected on " + formatPrettyDate(new Date(actualInjectedDateStr)) + ")";
+          }
+        } else {
+          // Patient has NOT been injected this week!
+          const activePreferredDate = getPatientActivePreferredDate(patient, cellDate);
+          const activePreferredDateStr = formatDateString(activePreferredDate);
+
+          if (cellDateStr === activePreferredDateStr) {
+            // This cell is the active preferred date!
+            if (cellDateStr === todayStr) {
+              iconColorClass = "red";
+              statusText = "Preferred Day (Today - Pending)";
+            } else {
+              iconColorClass = "yellow";
+              statusText = "Preferred Day (Pending)";
+            }
+          } else {
+            // Other available clinic day (styled as transparent-grey per user comment feedback)
+            iconColorClass = "transparent-grey";
+            statusText = "Clinic Available (Pending)";
+          }
+        }
+
+        // Render the beautiful SVG person silhouette icon
+        const iconWrapper = document.createElement("span");
+        iconWrapper.className = `calendar-patient-icon-wrapper ${iconColorClass}`;
+        iconWrapper.title = `${patient.name} (Round ${patient.schedules[cellDayName]}) — ${statusText}`;
+        iconWrapper.innerHTML = `
+          <svg class="calendar-patient-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+          </svg>
+        `;
+        dotsContainer.appendChild(iconWrapper);
       });
     }
 
