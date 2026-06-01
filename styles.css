@@ -1590,14 +1590,18 @@ input:checked + .switch-slider:before {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 1001;
-  transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.3s ease;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--color-hairline);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .nav-drawer.active {
   left: 0; /* Slide in smoothly */
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .drawer-header {
@@ -1666,6 +1670,10 @@ input:checked + .switch-slider:before {
 .monthly-day-cell {
   min-height: 70px;
   cursor: pointer;
+}
+
+.monthly-day-cell * {
+  pointer-events: none; /* Guarantee all touches inside are captured directly by the day cell listener */
 }
 
 .monthly-day-cell:hover {
