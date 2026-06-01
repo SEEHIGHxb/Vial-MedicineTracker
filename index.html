@@ -169,7 +169,7 @@
               <span class="agenda-date-subtitle" id="agenda-date-subtitle">Selected Day Queue</span>
               <h3 class="agenda-date-title" id="agenda-date-title">Sunday, 31 May 2026</h3>
             </div>
-            <div class="agenda-stats-pill" id="agenda-stats-pill">0 of 0 Completed</div>
+            <div class="agenda-stats-pill" id="agenda-stats-pill">0 of 0 Injected</div>
           </div>
           <div class="agenda-list" id="agenda-patients-list">
             <!-- Populated dynamically via app.js -->
@@ -204,17 +204,19 @@
 
         <!-- Store-Utility-Card-style Patient Grid -->
         <div class="patient-grid" id="patient-cards-grid">
-          <!-- Dynamically populated patient cards -->
-          <div class="empty-state" id="empty-state">
-            <svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <p class="empty-title">No Patients Found</p>
-            <p class="empty-desc">Create your first patient to start tracking weekly injections</p>
-            <button class="button-primary" id="empty-add-btn">Add Patient</button>
-          </div>
+          <!-- Dynamically populated patient cards will be injected here -->
+        </div>
+
+        <!-- Empty State Helper (Hidden by default, separate to preserve button event bindings) -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <svg class="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p class="empty-title">No Patients Found</p>
+          <p class="empty-desc">Create your first patient to start tracking weekly injections</p>
+          <button class="button-primary" id="empty-add-btn">Add Patient</button>
         </div>
       </div>
     </section>
@@ -227,7 +229,7 @@
         <p class="lead">Send automatically scheduled alerts directly to your watch screen</p>
         
         <div class="settings-layout-grid">
-          <!-- Notification Status & Round Times Customizer -->
+          <!-- 1. Notification Status & Round Times Customizer -->
           <div class="store-utility-card notification-card">
             <div class="settings-card-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
@@ -236,7 +238,7 @@
               </svg>
               <h3>Round Alarms Configuration</h3>
             </div>
-            <p class="settings-card-desc">When active, the app queries your schedules and fires notification summaries exactly 10 minutes before each round starts (checks every day)</p>
+            <p class="settings-card-desc">When active, the app queries schedules and fires notifications exactly 10 minutes before each round starts today</p>
             
             <div class="setting-toggle-row">
               <span class="setting-label">Enable Round Alerts</span>
@@ -249,15 +251,15 @@
             <!-- Custom Round Alarm Times -->
             <div class="round-times-configurator">
               <div class="round-time-input-group">
-                <label for="alarm-time-r1">Round 1 Alert Time</label>
+                <label for="alarm-time-r1">Round 1 Alert</label>
                 <input type="time" id="alarm-time-r1" class="form-input-text" value="06:50">
               </div>
               <div class="round-time-input-group">
-                <label for="alarm-time-r2">Round 2 Alert Time</label>
+                <label for="alarm-time-r2">Round 2 Alert</label>
                 <input type="time" id="alarm-time-r2" class="form-input-text" value="10:50">
               </div>
               <div class="round-time-input-group">
-                <label for="alarm-time-r3">Round 3 Alert Time</label>
+                <label for="alarm-time-r3">Round 3 Alert</label>
                 <input type="time" id="alarm-time-r3" class="form-input-text" value="12:50">
               </div>
             </div>
@@ -270,7 +272,7 @@
             <button class="button-primary-accent" id="trigger-test-notif-btn">Test Instant Watch Notice</button>
           </div>
 
-          <!-- Watch Sync Guide & Data Purge Card -->
+          <!-- 2. Watch Sync Guide Card -->
           <div class="store-utility-card watch-guide-card">
             <div class="settings-card-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
@@ -278,36 +280,38 @@
                 <line x1="6" y1="6" x2="18" y2="6"></line>
                 <line x1="6" y1="18" x2="18" y2="18"></line>
               </svg>
-              <h3>Watch Sync & Operations</h3>
+              <h3>Watch Sync Guide</h3>
             </div>
             
             <div class="guide-steps-list">
               <div class="guide-step">
                 <span class="step-num">1</span>
-                <p><strong>Standard Browser Prompts:</strong> Grant notification permissions. Alarms trigger standard system notices</p>
+                <p><strong>Standard Browser Prompts:</strong> Grant notification permissions when prompted by your browser</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">2</span>
-                <p><strong>For Windows (Phone Link):</strong> Connect your phone using <em>Link to Windows</em>. PC notifications will mirror automatically</p>
+                <p><strong>For Windows (Phone Link):</strong> Connect your phone using <em>Link to Windows</em> to mirror alerts</p>
               </div>
               <div class="guide-step">
                 <span class="step-num">3</span>
-                <p><strong>Galaxy Wearable Sync:</strong> In the <em>Galaxy Wearable</em> app, ensure notification forwarding is enabled for your phone's browser or Phone Link app</p>
+                <p><strong>Galaxy Wearable Sync:</strong> In the <em>Galaxy Wearable</em> settings, enable notification forwarding for your browser</p>
               </div>
             </div>
+          </div>
 
-            <!-- Database Operations -->
-            <div class="database-operations-box">
-              <h4>Database Operations</h4>
-              <p class="settings-card-desc" style="margin-bottom: var(--spacing-xs);">Permanently wipe all patients, custom daily schedules, and injection history from your local sandbox storage</p>
-              <button class="button-pearl-capsule" id="clear-database-btn" style="color: #ff3b30; border-color: rgba(255, 59, 48, 0.15); background-color: rgba(255, 59, 48, 0.02); width: 100%; justify-content: center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                Clear Patient Database
-              </button>
+          <!-- 3. Database Operations Card -->
+          <div class="store-utility-card database-operations-card">
+            <div class="settings-card-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon" style="color: var(--color-danger);">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <h3 style="color: var(--color-danger);">Database Operations</h3>
             </div>
+            <p class="settings-card-desc" style="margin-bottom: var(--spacing-md); line-height: 1.5;">Permanently wipe all patients, custom daily schedules, and injection history from your local sandbox storage. This action is secure, instant, and cannot be undone</p>
+            <button class="button-pearl-capsule" id="clear-database-btn" style="color: #ff3b30; border-color: rgba(255, 59, 48, 0.15); background-color: rgba(255, 59, 48, 0.02); width: 100%; justify-content: center; font-weight: 600;">
+              Clear Patient Database
+            </button>
           </div>
         </div>
       </div>
@@ -354,10 +358,111 @@
         <div class="form-section">
           <h3>Scheduling & Clinic Availability</h3>
           
-          <!-- Primary Preferred Schedule Highlight Box -->
-          <div class="preferred-schedule-box">
+          <!-- A. Clinic Availability & Custom Rounds Grid (Placed on TOP of Preferred Box) -->
+          <div class="input-group">
+            <label>Clinic Availability & Round Schedules</label>
+            <p class="input-hint" style="margin-bottom: var(--spacing-sm);">Enable clinical weekdays by clicking their oval buttons, then select their scheduled round (Round 1–3) next to them</p>
+            
+            <div class="availability-rounds-table" id="availability-rounds-table">
+              <!-- Sunday to Saturday rows featuring high-fidelity Oval Day Buttons followed directly by Round Dropdowns -->
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Sun" class="avail-day-checkbox">
+                  <span>Sun</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Sun" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Mon" class="avail-day-checkbox">
+                  <span>Mon</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Mon" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Tue" class="avail-day-checkbox">
+                  <span>Tue</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Tue" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Wed" class="avail-day-checkbox">
+                  <span>Wed</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Wed" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Thu" class="avail-day-checkbox">
+                  <span>Thu</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Thu" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Fri" class="avail-day-checkbox">
+                  <span>Fri</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Fri" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="availability-row">
+                <label class="weekday-chip">
+                  <input type="checkbox" name="p-available-days" value="Sat" class="avail-day-checkbox">
+                  <span>Sat</span>
+                </label>
+                <div class="availability-round-select-wrapper">
+                  <select name="p-day-round-Sat" class="form-select-pill-sm" disabled>
+                    <option value="1">Round 1</option>
+                    <option value="2">Round 2</option>
+                    <option value="3">Round 3</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- B. Primary Preferred Schedule Box (Moved BELOW Clinic Availability Grid) -->
+          <div class="preferred-schedule-box" style="margin-top: var(--spacing-lg);">
             <h4 class="box-title">Primary Preferred Schedule</h4>
-            <p class="box-subtitle">Specify the primary preferred day and round for this patient</p>
+            <p class="box-subtitle">Specify the primary preferred day and session round for this patient</p>
             <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
               <div class="input-group">
                 <label for="p-usual-day">Preferred Injection Day</label>
@@ -378,107 +483,6 @@
                   <option value="2">Round 2</option>
                   <option value="3">Round 3</option>
                 </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Dynamic Clinic Availability & Custom Rounds Grid -->
-          <div class="input-group" style="margin-top: var(--spacing-lg);">
-            <label>Clinic Availability & Round Schedules</label>
-            <p class="input-hint">Enable clinic days for this patient and select their scheduled round (1-3) for each day</p>
-            
-            <div class="availability-rounds-table" id="availability-rounds-table">
-              <!-- Sunday to Saturday rows -->
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Sun" class="avail-day-checkbox">
-                  <span class="day-name">Sunday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Sun" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2" selected>Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Mon" class="avail-day-checkbox">
-                  <span class="day-name">Monday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Mon" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Tue" class="avail-day-checkbox">
-                  <span class="day-name">Tuesday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Tue" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Wed" class="avail-day-checkbox">
-                  <span class="day-name">Wednesday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Wed" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Thu" class="avail-day-checkbox">
-                  <span class="day-name">Thursday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Thu" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Fri" class="avail-day-checkbox">
-                  <span class="day-name">Friday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Fri" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
-              </div>
-              <div class="availability-row">
-                <label class="availability-check-label">
-                  <input type="checkbox" name="p-available-days" value="Sat" class="avail-day-checkbox">
-                  <span class="day-name">Saturday</span>
-                </label>
-                <div class="availability-round-select-wrapper">
-                  <select name="p-day-round-Sat" class="form-select-pill-sm" disabled>
-                    <option value="1" selected>Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>

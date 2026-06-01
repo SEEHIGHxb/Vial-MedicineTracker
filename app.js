@@ -19,11 +19,53 @@ const WEEKDAYS_FULL = {
   "Sat": "Saturday"
 };
 
-// Seed patients data if LocalStorage is empty
+// Seed patients data if LocalStorage is empty, and dynamically migrate old schemas
 function seedDatabase() {
   const localData = localStorage.getItem("vial_patients");
   if (localData) {
     patients = JSON.parse(localData);
+
+    // Robust Safe Schema Migration for Pre-existing LocalStorage Databases
+    let requiresMigration = false;
+    patients.forEach(patient => {
+      // 1. If schedules mapping is missing (old version patient), construct it safely
+      if (!patient.schedules) {
+        patient.schedules = {};
+        patient.usualRound = patient.usualRound || 1; // Default to Round 1
+
+        // Map old availableDays array into schedules with Round 1 as default
+        if (patient.availableDays && Array.isArray(patient.availableDays)) {
+          patient.availableDays.forEach(day => {
+            patient.schedules[day] = 1;
+          });
+        }
+
+        // Map old usualDay to the new schedules matrix
+        if (patient.usualDay) {
+          patient.schedules[patient.usualDay] = patient.usualRound;
+        }
+
+        requiresMigration = true;
+      }
+
+      // 2. Ensure usualRound exists
+      if (patient.usualRound === undefined) {
+        patient.usualRound = 1;
+        requiresMigration = true;
+      }
+
+      // 3. Clean up obsolete fields to save LocalStorage footprint
+      if (patient.medicine !== undefined) delete patient.medicine;
+      if (patient.dose !== undefined) delete patient.dose;
+      if (patient.site !== undefined) delete patient.site;
+      if (patient.availableDays !== undefined) delete patient.availableDays;
+      if (patient.usualTime !== undefined) delete patient.usualTime;
+    });
+
+    if (requiresMigration) {
+      console.log("Safe LocalStorage data migration completed successfully");
+      saveToLocalStorage();
+    }
   } else {
     // High-quality mock patients to give a fully functional clinical view immediately
     // Styled for the new streamlined schema (Rounds 1-3, custom schedules, no medicine specs)
@@ -434,15 +476,15 @@ function toggleInjectionStatus(patientId, dateStr) {
 function renderPatientDirectory() {
   const gridContainer = document.getElementById("patient-cards-grid");
   const searchInput = document.getElementById("patient-search-input");
-  if (!gridContainer || !searchInput) return;
+  const emptyState = document.getElementById("empty-state");
+
+  if (!gridContainer || !searchInput || !emptyState) return;
 
   const searchVal = searchInput.value.toLowerCase();
   const activeFilter = document.querySelector(".filter-chip.active")?.dataset.filter || "all";
 
-  // Clear previous grid, keeping empty state helper
-  const emptyState = document.getElementById("empty-state");
+  // Clear previous cards inside the container
   gridContainer.innerHTML = "";
-  gridContainer.appendChild(emptyState);
 
   const currentSun = getStartOfWeek(new Date());
 
@@ -605,6 +647,22 @@ function openPatientDetails(patientId) {
 
 // 5. Patient Add/Edit Form Logic
 
+// Bulletproof sync of custom availability round dropdowns (enabled/disabled states)
+function syncRoundsDropdownsState() {
+  WEEKDAYS.forEach(day => {
+    const cb = document.querySelector(`.avail-day-checkbox[value="${day}"]`);
+    const select = document.querySelector(`select[name="p-day-round-${day}"]`);
+    if (cb && select) {
+      select.disabled = !cb.checked;
+      if (cb.checked) {
+        select.style.backgroundColor = "var(--color-canvas)";
+      } else {
+        select.style.backgroundColor = "";
+      }
+    }
+  });
+}
+
 // Intercept checkbox changes inside Patient modal availability table
 function bindFormCheckboxesBehavior() {
   const table = document.getElementById("availability-rounds-table");
@@ -612,16 +670,8 @@ function bindFormCheckboxesBehavior() {
 
   const checkboxes = table.querySelectorAll(".avail-day-checkbox");
   checkboxes.forEach(cb => {
-    cb.addEventListener("change", (e) => {
-      const selectWrapper = cb.closest(".availability-row").querySelector("select");
-      if (selectWrapper) {
-        selectWrapper.disabled = !cb.checked;
-        if (cb.checked) {
-          selectWrapper.style.backgroundColor = "var(--color-canvas)";
-        } else {
-          selectWrapper.style.backgroundColor = "";
-        }
-      }
+    cb.addEventListener("change", () => {
+      syncRoundsDropdownsState(); // Bulletproof sync on trigger
     });
   });
 }
@@ -632,13 +682,11 @@ function openAddPatientForm() {
   document.getElementById("modal-title-label").textContent = "Add Patient Profile";
   document.getElementById("delete-patient-btn").style.display = "none";
   
-  // Disable all round dropdowns initially (except Sunday which default checked in HTML template is not present)
-  const selectDropdowns = document.querySelectorAll("#availability-rounds-table select");
-  selectDropdowns.forEach(sel => {
-    sel.disabled = true;
-    sel.value = "1";
-    sel.style.backgroundColor = "";
-  });
+  // Set all checkboxes as unchecked and dropdowns disabled
+  const checkboxes = document.querySelectorAll(".avail-day-checkbox");
+  checkboxes.forEach(cb => cb.checked = false);
+
+  syncRoundsDropdownsState();
 
   openModal("patient-modal-overlay");
 }
@@ -657,7 +705,7 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-usual-round").value = patient.usualRound;
   document.getElementById("p-notes").value = patient.notes || "";
 
-  // Set clinic availability checkboxes and round dropdowns
+  // Set clinic availability checkboxes and round dropdown values
   WEEKDAYS.forEach(day => {
     const cb = document.querySelector(`.avail-day-checkbox[value="${day}"]`);
     const select = document.querySelector(`select[name="p-day-round-${day}"]`);
@@ -665,17 +713,16 @@ function openEditPatientForm(patientId) {
     if (cb && select) {
       const isDayActive = patient.schedules[day] !== undefined;
       cb.checked = isDayActive;
-      select.disabled = !isDayActive;
-      
       if (isDayActive) {
         select.value = String(patient.schedules[day]);
-        select.style.backgroundColor = "var(--color-canvas)";
       } else {
         select.value = "1";
-        select.style.backgroundColor = "";
       }
     }
   });
+
+  // Bulletproof state synchronization
+  syncRoundsDropdownsState();
 
   document.getElementById("delete-patient-btn").style.display = "block";
   
@@ -706,7 +753,7 @@ function handleFormSubmit(e) {
   const usualRound = parseInt(document.getElementById("p-usual-round").value);
   const notes = document.getElementById("p-notes").value;
 
-  // Retrieve multiselect availability weekdays and custom rounds
+  // Retrieve availability weekdays and custom rounds
   const schedules = {};
   
   WEEKDAYS.forEach(day => {
@@ -887,7 +934,7 @@ function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
     }
   } else {
     if (dueThisRound.length === 0) {
-      return; // Do not push spam alerts if nobody is scheduled in this round
+      return; // Do not push alerts if nobody is scheduled
     } else {
       const namesList = dueThisRound.map(p => p.name).join(", ");
       body = `Round ${roundNum} starting: ${dueThisRound.length} patient injections due: ${namesList}`;
@@ -920,7 +967,7 @@ function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
 }
 
 // Background scheduler time watcher: checks every 30 seconds
-let lastAlarmFiredStr = ""; // Tracks "YYYY-MM-DD_Round#" to prevent double alerts inside the same minute
+let lastAlarmFiredStr = ""; // Tracks "YYYY-MM-DD_Round#" to prevent double alerts inside the same active minute
 
 function startAlarmTimeWatcher() {
   setInterval(() => {
@@ -1020,7 +1067,7 @@ document.addEventListener("DOMContentLoaded", () => {
   currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   selectedDate = today;
 
-  // Seed database
+  // Seed database and complete safe schema migrations for existing LocalStorage data
   seedDatabase();
 
   // Load alert timings
@@ -1042,7 +1089,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add patient navigation action
   document.getElementById("add-patient-btn").addEventListener("click", openAddPatientForm);
-  document.getElementById("empty-add-btn").addEventListener("click", openAddPatientForm);
+
+  // Safely retrieve empty-add-btn to prevent click event binding failures if database is cleared/loaded
+  const emptyAddBtn = document.getElementById("empty-add-btn");
+  if (emptyAddBtn) {
+    emptyAddBtn.addEventListener("click", openAddPatientForm);
+  }
 
   // Form submission
   document.getElementById("patient-form").addEventListener("submit", handleFormSubmit);

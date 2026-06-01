@@ -843,7 +843,7 @@ button:active, .weekday-chip:active, .filter-chip:active {
 
 .settings-layout-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--spacing-lg);
   width: 100%;
   margin-top: var(--spacing-xl);
@@ -1923,29 +1923,43 @@ input:checked + .switch-slider:before {
   background-color: var(--color-surface-pearl);
 }
 
-.availability-check-label {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+.weekday-chip {
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-ink);
-  flex-grow: 1;
+  user-select: none;
+  flex-shrink: 0;
 }
 
-.availability-check-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1.5px solid var(--color-hairline);
-  outline: none;
-  cursor: pointer;
-  accent-color: var(--color-primary);
+.weekday-chip input[type="checkbox"] {
+  display: none; /* Hide default checkbox */
+}
+
+.weekday-chip span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 38px;
+  background-color: var(--color-canvas-parchment);
+  color: var(--color-ink);
+  border-radius: var(--rounded-pill); /* Beautiful signature oval pill */
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.weekday-chip input[type="checkbox"]:checked + span {
+  background-color: var(--color-primary); /* Apple Action Blue checked state */
+  color: var(--color-on-primary);
+}
+
+.weekday-chip:hover span {
+  border-color: var(--color-primary);
 }
 
 .availability-round-select-wrapper {
-  min-width: 110px;
+  flex-grow: 1;
+  max-width: 140px;
 }
 
 .form-select-pill-sm {
