@@ -1069,7 +1069,7 @@ input:checked + .switch-slider:before {
 .modal-form {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;
   overflow: hidden;
   flex-grow: 1;
 }
@@ -1080,6 +1080,7 @@ input:checked + .switch-slider:before {
   flex-direction: column;
   gap: var(--spacing-xl);
   flex-grow: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1270,6 +1271,7 @@ input:checked + .switch-slider:before {
   padding: var(--spacing-xl);
   overflow-y: auto;
   flex-grow: 1;
+  min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
 
