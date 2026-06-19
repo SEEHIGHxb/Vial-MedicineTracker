@@ -699,7 +699,6 @@ button:active, .weekday-chip:active, .filter-chip:active {
   min-height: 200px;
 }
 
-/* Store-Utility-Card-style Patient Grid Card */
 .store-utility-card {
   background-color: var(--color-canvas);
   border: 1px solid var(--color-hairline);
@@ -711,6 +710,7 @@ button:active, .weekday-chip:active, .filter-chip:active {
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .store-utility-card:hover {
@@ -1477,7 +1477,41 @@ input:checked + .switch-slider:before {
     gap: var(--spacing-sm);
   }
   .patient-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  
+  .patient-grid .store-utility-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: auto;
+    gap: var(--spacing-md);
+  }
+  
+  .patient-grid .store-utility-card .patient-card-body {
+    margin: 0;
+    flex-grow: 1;
+  }
+  
+  .patient-grid .store-utility-card .patient-card-body h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  .patient-grid .store-utility-card .card-status-pill {
+    position: static;
+    order: 2;
+    margin: 0;
+  }
+  
+  .patient-grid .store-utility-card .patient-card-med,
+  .patient-grid .store-utility-card .patient-meta-list,
+  .patient-grid .store-utility-card .card-actions {
+    display: none !important;
   }
   .search-filter-container {
     flex-direction: column;

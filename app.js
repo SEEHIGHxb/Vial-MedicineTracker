@@ -73,8 +73,6 @@ function seedDatabase() {
       {
         id: "pat_1",
         name: "Johnathan Doe",
-        dob: "1982-04-12",
-        phone: "(555) 019-2834",
         usualDay: "Mon",
         usualRound: 2,
         schedules: {
@@ -88,8 +86,6 @@ function seedDatabase() {
       {
         id: "pat_2",
         name: "Eleanor Vance",
-        dob: "1954-11-28",
-        phone: "(555) 048-1192",
         usualDay: "Wed",
         usualRound: 1,
         schedules: {
@@ -102,8 +98,6 @@ function seedDatabase() {
       {
         id: "pat_3",
         name: "Marcus Brody",
-        dob: "1968-07-03",
-        phone: "(555) 091-8837",
         usualDay: "Fri",
         usualRound: 3,
         schedules: {
@@ -117,8 +111,6 @@ function seedDatabase() {
       {
         id: "pat_4",
         name: "Sarah Jenkins",
-        dob: "1991-09-15",
-        phone: "(555) 022-7711",
         usualDay: "Sun",
         usualRound: 1,
         schedules: {
@@ -191,14 +183,6 @@ function formatPrettyDate(date) {
   return `${day} ${month} ${year}`;
 }
 
-// Calculate age from date of birth
-function calculateAge(dobStr) {
-  const dob = new Date(dobStr);
-  const diff = Date.now() - dob.getTime();
-  const ageDate = new Date(diff);
-  return Math.abs(ageDate.getUTCFullYear() - 1970);
-}
-
 // 3. UI Core Renderers
 
 // Initialize Dashboard Overview Metrics
@@ -227,193 +211,6 @@ function updateDashboardStats() {
 
   // Sub-nav text updater
   document.getElementById("sub-nav-stats").textContent = `${injectedThisWeek} of ${patients.length} Injected This Week`;
-}
-
-// Calculates the active preferred date for a patient in the week of cellDate
-function getPatientActivePreferredDate(patient, cellDate) {
-  const sunday = getStartOfWeek(cellDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // 1. Get the primary preferred date for this week
-  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
-  const preferredDate = new Date(sunday);
-  preferredDate.setDate(sunday.getDate() + dayIndex);
-  preferredDate.setHours(0, 0, 0, 0);
-
-  // 2. Check if primary preferred date has passed relative to today
-  if (preferredDate < today) {
-    // Has passed! Look for the next incoming scheduled day starting from today
-    // We check the next 7 days starting from today to find the first scheduled day
-    for (let offset = 0; offset < 7; offset++) {
-      const nextDate = new Date(today);
-      nextDate.setDate(today.getDate() + offset);
-      const nextDayName = WEEKDAYS[nextDate.getDay()];
-      
-      // Is the patient scheduled on this day?
-      if (patient.schedules[nextDayName] !== undefined) {
-        return nextDate;
-      }
-    }
-  }
-
-  // If it hasn't passed, or if no incoming day is found, return the primary preferred date
-  return preferredDate;
-}
-
-// Render the monthly calendar grid using compact indicator person SVG icons
-function renderMonthlyCalendar() {
-  const gridContainer = document.getElementById("monthly-calendar-grid");
-  if (!gridContainer) return;
-  gridContainer.innerHTML = "";
-
-  const today = new Date();
-  const todayStr = formatDateString(today);
-  const selectedStr = selectedDate ? formatDateString(selectedDate) : null;
-
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-
-  // Format Month & Year for Header (e.g. "June 2026")
-  const monthNamesFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  document.getElementById("calendar-month-label").textContent = `${monthNamesFull[month]} ${year}`;
-
-  // 1. Render Weekday Header Row inside the grid container (Sunday-start: Sun to Sat)
-  WEEKDAYS.forEach(dayName => {
-    const headerCell = document.createElement("div");
-    headerCell.className = "monthly-day-header-cell";
-    headerCell.textContent = dayName;
-    gridContainer.appendChild(headerCell);
-  });
-
-  // 2. Calculate dates for month sheet grid
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const numDaysInMonth = lastDayOfMonth.getDate();
-
-  // Get Sunday-based start offset of the 1st of the month (0=Sun, 6=Sat)
-  let startOffset = firstDayOfMonth.getDay();
-
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-  // Total grid cells needed to complete full 7-cell rows (usually 35 or 42)
-  const totalCells = Math.ceil((startOffset + numDaysInMonth) / 7) * 7;
-
-  for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement("div");
-    let cellDate = null;
-    let isOtherMonth = false;
-
-    if (i < startOffset) {
-      // Previous Month cell padding
-      const prevDayNum = prevMonthLastDay - startOffset + i + 1;
-      cellDate = new Date(year, month - 1, prevDayNum);
-      isOtherMonth = true;
-    } else if (i >= startOffset + numDaysInMonth) {
-      // Next Month cell padding
-      const nextDayNum = i - startOffset - numDaysInMonth + 1;
-      cellDate = new Date(year, month + 1, nextDayNum);
-      isOtherMonth = true;
-    } else {
-      // Current Month day cell
-      const dayNum = i - startOffset + 1;
-      cellDate = new Date(year, month, dayNum);
-    }
-
-    const cellDateStr = formatDateString(cellDate);
-    const isToday = cellDateStr === todayStr;
-    const isSelected = selectedStr && cellDateStr === selectedStr;
-
-    cell.className = `monthly-day-cell ${isToday ? "today" : ""} ${isSelected ? "selected-day" : ""} ${isOtherMonth ? "other-month" : ""}`;
-
-    // Day number bubble
-    const numBubble = document.createElement("div");
-    numBubble.className = "monthly-day-cell-number-bubble";
-    numBubble.textContent = cellDate.getDate();
-    cell.appendChild(numBubble);
-
-    // Indicators Dots/Icons Container for Scheduled Rounds
-    const dotsContainer = document.createElement("div");
-    dotsContainer.className = "calendar-dots-container";
-
-    const cellDayIndex = cellDate.getDay();
-    const cellDayName = WEEKDAYS[cellDayIndex];
-
-    // Find patients scheduled for this weekday
-    const scheduledPatients = patients.filter(p => p.schedules[cellDayName] !== undefined);
-
-    if (scheduledPatients.length > 0) {
-      scheduledPatients.forEach(patient => {
-        // 1. Check if patient has been injected this week
-        const sunday = getStartOfWeek(cellDate);
-        const weekStartStr = formatDateString(sunday);
-        const saturdayDate = new Date(sunday);
-        saturdayDate.setDate(sunday.getDate() + 6);
-        const weekEndStr = formatDateString(saturdayDate);
-        
-        const actualInjectedDateStr = patient.injectionLogs.find(logDate => {
-          return logDate >= weekStartStr && logDate <= weekEndStr;
-        });
-
-        let iconColorClass = "";
-        let statusText = "";
-
-        if (actualInjectedDateStr !== undefined) {
-          // Patient HAS been injected this week!
-          if (cellDateStr === actualInjectedDateStr) {
-            iconColorClass = "green";
-            statusText = "Injected (This Date)";
-          } else {
-            iconColorClass = "transparent-grey";
-            statusText = "Clinic Available (Injected on " + formatPrettyDate(new Date(actualInjectedDateStr)) + ")";
-          }
-        } else {
-          // Patient has NOT been injected this week!
-          const activePreferredDate = getPatientActivePreferredDate(patient, cellDate);
-          const activePreferredDateStr = formatDateString(activePreferredDate);
-
-          if (cellDateStr === activePreferredDateStr) {
-            // This cell is the active preferred date!
-            if (cellDateStr === todayStr) {
-              iconColorClass = "red";
-              statusText = "Preferred Day (Today - Pending)";
-            } else {
-              iconColorClass = "yellow";
-              statusText = "Preferred Day (Pending)";
-            }
-          } else {
-            // Other available clinic day (styled as transparent-grey per user comment feedback)
-            iconColorClass = "transparent-grey";
-            statusText = "Clinic Available (Pending)";
-          }
-        }
-
-        // Render the beautiful SVG person silhouette icon
-        const iconWrapper = document.createElement("span");
-        iconWrapper.className = `calendar-patient-icon-wrapper ${iconColorClass}`;
-        iconWrapper.title = `${patient.name} (Round ${patient.schedules[cellDayName]}) — ${statusText}`;
-        iconWrapper.innerHTML = `
-          <svg class="calendar-patient-icon" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="7" r="4"></circle>
-            <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
-          </svg>
-        `;
-        dotsContainer.appendChild(iconWrapper);
-      });
-    }
-
-    cell.appendChild(dotsContainer);
-
-    // Click handler to select a day and render its Agenda list underneath
-    const targetDate = new Date(cellDate);
-    cell.addEventListener("click", () => {
-      selectedDate = targetDate;
-      renderMonthlyCalendar(); // Refresh highlight selector
-      renderDailyAgenda(targetDate);
-    });
-
-    gridContainer.appendChild(cell);
-  }
 }
 
 // Render the selected day injections agenda list below the calendar grid
@@ -515,10 +312,9 @@ function renderDailyAgenda(date) {
       profileBtn.style.width = "30px";
       profileBtn.style.height = "30px";
       profileBtn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       `;
       profileBtn.onclick = () => openPatientDetails(patient.id);
@@ -548,7 +344,6 @@ function toggleInjectionStatus(patientId, dateStr) {
   }
 
   saveToLocalStorage();
-  renderMonthlyCalendar();
   if (selectedDate) renderDailyAgenda(selectedDate);
   renderPatientDirectory();
 }
@@ -602,21 +397,13 @@ function renderPatientDirectory() {
         .map(([day, round]) => `${day} (R${round})`)
         .join(", ");
 
-      // HTML template for patient card styled in Apple Store Grid Card chassis
+      // HTML template for patient card styled in Apple Store Grid Card chassis (removed icon)
       card.innerHTML = `
         <div class="card-status-pill ${injectedThisWeek ? "completed" : "pending"}">
           ${injectedThisWeek ? "Completed" : "Pending Injection"}
         </div>
         
         <div class="patient-card-body">
-          <div class="card-ill-box">
-            <!-- Medical profile minimal silhouette -->
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          
           <h3>${patient.name}</h3>
           <p class="patient-card-med">Primary schedule: ${WEEKDAYS_FULL[patient.usualDay]} · Round ${patient.usualRound}</p>
           
@@ -641,6 +428,14 @@ function renderPatientDirectory() {
         </div>
       `;
 
+      // Full card is clickable to open details, unless user clicks action buttons/links
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("button") || e.target.closest(".text-link")) {
+          return;
+        }
+        openPatientDetails(patient.id);
+      });
+
       gridContainer.appendChild(card);
     });
   }
@@ -652,7 +447,6 @@ function openPatientDetails(patientId) {
   if (!patient) return;
 
   const detailBody = document.getElementById("detail-modal-body");
-  const age = calculateAge(patient.dob);
 
   // Generate logs history list
   let logsHtml = `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No past injections logged</p>`;
@@ -688,7 +482,6 @@ function openPatientDetails(patientId) {
       </div>
       <div class="detail-main-info">
         <h2>${patient.name}</h2>
-        <p>DOB: ${patient.dob} (Age ${age}) · Phone: ${patient.phone}</p>
       </div>
     </div>
 
@@ -780,8 +573,6 @@ function openEditPatientForm(patientId) {
   document.getElementById("modal-title-label").textContent = "Edit Patient Profile";
   
   document.getElementById("p-name").value = patient.name;
-  document.getElementById("p-dob").value = patient.dob;
-  document.getElementById("p-phone").value = patient.phone;
   document.getElementById("p-usual-day").value = patient.usualDay;
   document.getElementById("p-usual-round").value = patient.usualRound;
   document.getElementById("p-notes").value = patient.notes || "";
@@ -813,7 +604,6 @@ function openEditPatientForm(patientId) {
       patients = patients.filter(p => p.id !== patientId);
       saveToLocalStorage();
       closeModal("patient-modal-overlay");
-      renderMonthlyCalendar();
       if (selectedDate) renderDailyAgenda(selectedDate);
       renderPatientDirectory();
     }
@@ -828,8 +618,6 @@ function handleFormSubmit(e) {
 
   const id = document.getElementById("form-patient-id").value;
   const name = document.getElementById("p-name").value;
-  const dob = document.getElementById("p-dob").value;
-  const phone = document.getElementById("p-phone").value;
   const usualDay = document.getElementById("p-usual-day").value;
   const usualRound = parseInt(document.getElementById("p-usual-round").value);
   const notes = document.getElementById("p-notes").value;
@@ -856,14 +644,14 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, dob, phone, usualDay, usualRound, schedules, notes
+        name, usualDay, usualRound, schedules, notes
       };
     }
   } else {
     // Create new profile
     const newPatient = {
       id: "pat_" + Date.now(),
-      name, dob, phone, usualDay, usualRound, schedules, notes,
+      name, usualDay, usualRound, schedules, notes,
       injectionLogs: []
     };
     patients.push(newPatient);
@@ -871,7 +659,6 @@ function handleFormSubmit(e) {
 
   saveToLocalStorage();
   closeModal("patient-modal-overlay");
-  renderMonthlyCalendar();
   if (selectedDate) renderDailyAgenda(selectedDate);
   renderPatientDirectory();
 }
@@ -1118,9 +905,8 @@ function loadSettingsConfig() {
   });
   document.getElementById("alarm-time-r3").addEventListener("change", (e) => {
     localStorage.setItem("vial_alarm_r3", e.target.value);
+    // Bind clear database operations button
   });
-
-  // Bind clear database operations button
   const clearDbBtn = document.getElementById("clear-database-btn");
   if (clearDbBtn) {
     clearDbBtn.addEventListener("click", () => {
@@ -1130,7 +916,6 @@ function loadSettingsConfig() {
         if (confirm2) {
           patients = [];
           saveToLocalStorage();
-          renderMonthlyCalendar();
           if (selectedDate) renderDailyAgenda(selectedDate);
           renderPatientDirectory();
           alert("Clinical database has been completely purged");
@@ -1145,7 +930,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
   
   // Set currentMonth calendar header anchor, and default select selectedDate as today
-  currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   selectedDate = today;
 
   // Seed database and complete safe schema migrations for existing LocalStorage data
@@ -1156,7 +940,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Core Renderers
   updateDashboardStats();
-  renderMonthlyCalendar();
   renderDailyAgenda(selectedDate);
   renderPatientDirectory();
 
@@ -1186,15 +969,27 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("close-detail-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
   document.getElementById("close-detail-bottom-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
 
-  // Month Navigator button clicks
-  document.getElementById("prev-month-btn").addEventListener("click", () => {
-    currentMonth.setMonth(currentMonth.getMonth() - 1);
-    renderMonthlyCalendar();
-  });
-  document.getElementById("next-month-btn").addEventListener("click", () => {
-    currentMonth.setMonth(currentMonth.getMonth() + 1);
-    renderMonthlyCalendar();
-  });
+  // Day Navigator button clicks
+  const prevDayBtn = document.getElementById("prev-day-btn");
+  if (prevDayBtn) {
+    prevDayBtn.addEventListener("click", () => {
+      selectedDate.setDate(selectedDate.getDate() - 1);
+      renderDailyAgenda(selectedDate);
+    });
+  }
+  const nextDayBtn = document.getElementById("next-day-btn");
+  if (nextDayBtn) {
+    nextDayBtn.addEventListener("click", () => {
+      selectedDate.setDate(selectedDate.getDate() + 1);
+      renderDailyAgenda(selectedDate);
+    });
+  }
+
+  // Dashboard Add Patient button click
+  const dashboardAddBtn = document.getElementById("dashboard-add-btn");
+  if (dashboardAddBtn) {
+    dashboardAddBtn.addEventListener("click", openAddPatientForm);
+  }
 
   // Search input typing filter
   document.getElementById("patient-search-input").addEventListener("input", renderPatientDirectory);
@@ -1229,7 +1024,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Smooth local navigation links highlighting
   window.addEventListener("scroll", () => {
     const scrollPos = window.scrollY + 100;
-    const sections = ["overview-section", "calendar-section", "database-section", "settings-section"];
+    const sections = ["overview-section", "database-section", "settings-section"];
     
     sections.forEach(secId => {
       const el = document.getElementById(secId);
