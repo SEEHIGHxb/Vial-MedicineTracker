@@ -1680,6 +1680,18 @@ input:checked + .switch-slider:before {
   .nav-menu {
     gap: var(--spacing-md);
   }
+  .modal-form-actions, .detail-sheet-footer {
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+    padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom)) !important;
+  }
+  .modal-form-actions button, .detail-sheet-footer button {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    height: 36px !important;
+  }
+  .modal-form-actions .form-action-right {
+    gap: 8px !important;
+  }
 }
 
 /* Small phone (419px & below) */
