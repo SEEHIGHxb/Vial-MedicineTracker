@@ -61,6 +61,16 @@ function seedDatabase() {
       if (patient.site !== undefined) delete patient.site;
       if (patient.availableDays !== undefined) delete patient.availableDays;
       if (patient.usualTime !== undefined) delete patient.usualTime;
+
+      // 4. Ensure startDate and endDate exist for treatment window tracking
+      if (!patient.startDate) {
+        patient.startDate = "2026-05-01";
+        requiresMigration = true;
+      }
+      if (!patient.endDate) {
+        patient.endDate = "2026-12-31";
+        requiresMigration = true;
+      }
     });
 
     if (requiresMigration) {
@@ -82,7 +92,9 @@ function seedDatabase() {
           "Fri": 3
         },
         notes: "Patient prefers a slow injection. Monitor for mild site redness. Patient has a mild penicillin allergy",
-        injectionLogs: ["2026-05-25"] // Completed on Monday of the current week (May 25, 2026)
+        injectionLogs: ["2026-05-25"], // Completed on Monday of the current week (May 25, 2026)
+        startDate: "2026-05-01",
+        endDate: "2026-12-31"
       },
       {
         id: "pat_2",
@@ -94,7 +106,9 @@ function seedDatabase() {
           "Fri": 2
         },
         notes: "Check blood glucose levels prior to administration. Remind patient about weekly dietary guidelines",
-        injectionLogs: [] // Pending for this week
+        injectionLogs: [], // Pending for this week
+        startDate: "2026-05-01",
+        endDate: "2026-12-31"
       },
       {
         id: "pat_3",
@@ -107,7 +121,9 @@ function seedDatabase() {
           "Fri": 3
         },
         notes: "Administer with a high-gauge needle. Patient takes folic acid daily. Check blood count lab sheet monthly",
-        injectionLogs: [] // Pending for this week
+        injectionLogs: [], // Pending for this week
+        startDate: "2026-05-01",
+        endDate: "2026-12-31"
       },
       {
         id: "pat_4",
@@ -119,7 +135,9 @@ function seedDatabase() {
           "Sun": 1
         },
         notes: "Keep medication refrigerated until 30 minutes before injection. Patient self-injects occasionally under supervision",
-        injectionLogs: ["2026-05-31"] // Completed today (Sunday May 31, 2026)
+        injectionLogs: ["2026-05-31"], // Completed today (Sunday May 31, 2026)
+        startDate: "2026-05-01",
+        endDate: "2026-12-31"
       }
     ];
     saveToLocalStorage();
@@ -191,9 +209,16 @@ function updateDashboardStats() {
   const todayDate = new Date();
   const todayDayName = WEEKDAYS[todayDate.getDay()];
   const currentSun = getStartOfWeek(todayDate);
+  const todayStr = formatDateString(todayDate);
 
-  // Due Today count: patients scheduled on today's weekday
-  const dueToday = patients.filter(p => p.schedules[todayDayName] !== undefined).length;
+  // Due Today count: patients scheduled on today's weekday and within active treatment window
+  const dueToday = patients.filter(p => {
+    const isScheduled = p.schedules[todayDayName] !== undefined;
+    if (!isScheduled) return false;
+    const start = p.startDate || "2000-01-01";
+    const end = p.endDate || "2099-12-31";
+    return todayStr >= start && todayStr <= end;
+  }).length;
   const dueTodayEl = document.getElementById("metric-due-today");
   if (dueTodayEl) dueTodayEl.textContent = dueToday;
 
@@ -237,8 +262,14 @@ function renderDailyAgenda(date) {
   titleEl.textContent = prettyDate;
   agendaSection.style.display = "block";
 
-  // Filter patients scheduled on this weekday
-  const scheduled = patients.filter(p => p.schedules[weekdayName] !== undefined);
+  // Filter patients scheduled on this weekday and within active treatment window
+  const scheduled = patients.filter(p => {
+    const isScheduled = p.schedules[weekdayName] !== undefined;
+    if (!isScheduled) return false;
+    const start = p.startDate || "2000-01-01";
+    const end = p.endDate || "2099-12-31";
+    return dateStr >= start && dateStr <= end;
+  });
 
   if (scheduled.length === 0) {
     statsEl.textContent = "0 scheduled";
@@ -379,10 +410,10 @@ function renderPatientDirectory() {
 
     if (!matchSearch) return false;
 
-    // Filter select match
-    const injectedThisWeek = isInjectedInWeek(patient, currentSun);
-    if (activeFilter === "pending" && injectedThisWeek) return false;
-    if (activeFilter === "completed" && !injectedThisWeek) return false;
+    // Filter select match: check weekday availability
+    if (activeFilter !== "all") {
+      if (patient.schedules[activeFilter] === undefined) return false;
+    }
 
     return true;
   });
@@ -523,6 +554,14 @@ function openPatientDetails(patientId) {
         <div class="detail-grid-item-label">Primary Schedule Session</div>
         <div class="detail-grid-item-value">Round ${patient.usualRound}</div>
       </div>
+      <div class="detail-grid-item">
+        <div class="detail-grid-item-label">First Injection Date</div>
+        <div class="detail-grid-item-value">${patient.startDate ? formatPrettyDate(patient.startDate) : "Not set"}</div>
+      </div>
+      <div class="detail-grid-item">
+        <div class="detail-grid-item-label">Last Injection Date</div>
+        <div class="detail-grid-item-value">${patient.endDate ? formatPrettyDate(patient.endDate) : "Not set"}</div>
+      </div>
     </div>
 
     <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability Matrix</h3>
@@ -591,6 +630,12 @@ function openAddPatientForm() {
 
   syncRoundsDropdownsState();
 
+  // Set default dates
+  document.getElementById("p-start-date").value = formatDateString(new Date());
+  const oneYearLater = new Date();
+  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+  document.getElementById("p-end-date").value = formatDateString(oneYearLater);
+
   openModal("patient-modal-overlay");
 }
 
@@ -605,6 +650,8 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-usual-day").value = patient.usualDay;
   document.getElementById("p-usual-round").value = patient.usualRound;
   document.getElementById("p-notes").value = patient.notes || "";
+  document.getElementById("p-start-date").value = patient.startDate || "";
+  document.getElementById("p-end-date").value = patient.endDate || "";
 
   // Set clinic availability checkboxes and round dropdown values
   WEEKDAYS.forEach(day => {
@@ -650,6 +697,8 @@ function handleFormSubmit(e) {
   const usualDay = document.getElementById("p-usual-day").value;
   const usualRound = parseInt(document.getElementById("p-usual-round").value);
   const notes = document.getElementById("p-notes").value;
+  const startDate = document.getElementById("p-start-date").value;
+  const endDate = document.getElementById("p-end-date").value;
 
   // Retrieve availability weekdays and custom rounds
   const schedules = {};
@@ -673,14 +722,14 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, usualDay, usualRound, schedules, notes
+        name, usualDay, usualRound, schedules, notes, startDate, endDate
       };
     }
   } else {
     // Create new profile
     const newPatient = {
       id: "pat_" + Date.now(),
-      name, usualDay, usualRound, schedules, notes,
+      name, usualDay, usualRound, schedules, notes, startDate, endDate,
       injectionLogs: []
     };
     patients.push(newPatient);

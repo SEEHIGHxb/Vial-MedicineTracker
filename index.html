@@ -96,8 +96,7 @@
     <!-- 3. Section 1: Hero Overview (White Canvas) -->
     <section class="product-tile-light" id="overview-section">
       <div class="tile-content">
-        <p class="tagline">Clinical Dashboard</p>
-        <h2 class="display-lg">Dose accuracy, trackable weekly</h2>
+        <h2 class="display-lg" style="margin-bottom: var(--spacing-md);">Clinical Dashboard</h2>
 
 
         <div class="action-buttons-group" style="margin-bottom: var(--spacing-lg);">
@@ -142,9 +141,7 @@
     <!-- 5. Section 3: Patient Database (White Canvas) -->
     <section class="product-tile-light" id="database-section">
       <div class="tile-content database-tile-content">
-        <p class="tagline">Patient Directory</p>
-        <h2 class="display-lg">Full clinical records</h2>
-        <p class="lead">Search and manage patients' medical details and available clinic times</p>
+        <h2 class="display-lg" style="margin-bottom: var(--spacing-md);">Clinical Records</h2>
         
         <!-- Search & Filter Controls -->
         <div class="search-filter-container">
@@ -159,8 +156,13 @@
           <div class="filter-dropdown-wrapper">
             <select id="patient-filter-select" class="filter-select">
               <option value="all">All Patients</option>
-              <option value="pending">Pending Injection</option>
-              <option value="completed">Completed This Week</option>
+              <option value="Sun">Available: Sunday</option>
+              <option value="Mon">Available: Monday</option>
+              <option value="Tue">Available: Tuesday</option>
+              <option value="Wed">Available: Wednesday</option>
+              <option value="Thu">Available: Thursday</option>
+              <option value="Fri">Available: Friday</option>
+              <option value="Sat">Available: Saturday</option>
             </select>
           </div>
         </div>
@@ -190,9 +192,7 @@
     <!-- 6. Section 4: System Settings & Watch Integration (Parchment Canvas) -->
     <section class="product-tile-parchment" id="settings-section">
       <div class="tile-content settings-tile-content">
-        <p class="tagline">System Settings & Watch Sync</p>
-        <h2 class="display-lg">Control your clinical panel</h2>
-        <p class="lead">Send automatically scheduled alerts directly to your watch screen</p>
+        <h2 class="display-lg" style="margin-bottom: var(--spacing-md);">System Settings</h2>
         
         <div class="settings-layout-grid">
           <!-- 1. Notification Status & Round Times Customizer -->
@@ -301,7 +301,8 @@
       <form class="modal-form" id="patient-form">
         <input type="hidden" id="form-patient-id">
         
-        <div class="form-section">
+        <div class="modal-form-scroll-body">
+          <div class="form-section">
           <h3>Personal Information</h3>
           
           <div class="input-group">
@@ -441,6 +442,21 @@
               </div>
             </div>
           </div>
+
+          <div class="preferred-schedule-box" style="margin-top: var(--spacing-md);">
+            <h4 class="box-title">Active Treatment Window</h4>
+            <p class="box-subtitle">Select the first and last dates of injection for dashboard queue display</p>
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
+              <div class="input-group">
+                <label for="p-start-date">First Injection Date</label>
+                <input type="date" id="p-start-date" class="form-input-text" required>
+              </div>
+              <div class="input-group">
+                <label for="p-end-date">Last Injection Date</label>
+                <input type="date" id="p-end-date" class="form-input-text" required>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="form-section">
@@ -450,6 +466,7 @@
             <textarea id="p-notes" class="form-textarea" placeholder="Add specific patient notes, clinical parameters, allergies or pre-injection procedures..."></textarea>
           </div>
         </div>
+        </div> <!-- End of modal-form-scroll-body -->
 
         <div class="modal-form-actions">
           <button type="button" class="button-pearl-capsule" id="delete-patient-btn" style="display: none; color: #ff3b30; border-color: rgba(255,59,48,0.12)">Delete Patient</button>
