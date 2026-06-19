@@ -671,23 +671,35 @@ button:active, .weekday-chip:active, .filter-chip:active {
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
 
-.filter-chips-wrapper {
-  display: flex;
-  gap: var(--spacing-xs);
+.filter-dropdown-wrapper {
+  flex-shrink: 0;
+  width: 170px;
 }
 
-.filter-chip {
-  background-color: var(--color-canvas-parchment);
-  color: var(--color-ink);
-  font-size: 13px;
-  font-weight: 400;
-  padding: 8px 16px;
+.filter-select {
+  width: 100%;
+  height: 44px;
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-pill);
+  padding: 0 32px 0 16px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231d1d1f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+  transition: all 0.2s ease;
+  color: var(--color-ink);
 }
 
-.filter-chip.active {
-  background-color: var(--color-ink);
-  color: var(--color-on-dark);
+.filter-select:focus, .filter-select:hover {
+  border-color: #b5b5ba;
+  background-color: var(--color-surface-pearl);
 }
 
 .patient-grid {
@@ -1514,17 +1526,123 @@ input:checked + .switch-slider:before {
     display: none !important;
   }
   .search-filter-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--spacing-md);
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: var(--spacing-md) !important;
+    margin-bottom: var(--spacing-md) !important;
   }
   .search-bar-wrapper {
-    max-width: 100%;
+    max-width: none !important;
+    flex-grow: 1 !important;
   }
-  .filter-chips-wrapper {
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 6px;
+  .filter-dropdown-wrapper {
+    flex-shrink: 0 !important;
+    width: 145px !important;
+  }
+  .filter-select {
+    height: 40px !important;
+    font-size: 13px !important;
+    padding: 0 28px 0 10px !important;
+    background-position: right 8px center !important;
+  }
+  .search-input {
+    height: 40px !important;
+    font-size: 14px !important;
+    padding: 10px 12px 10px 38px !important;
+  }
+  .search-icon {
+    left: 12px !important;
+  }
+  .tile-content {
+    padding: 0 var(--spacing-sm) !important;
+  }
+  .agenda-wrapper {
+    padding: var(--spacing-sm) !important;
+    margin-top: var(--spacing-sm) !important;
+    border-radius: var(--rounded-md) !important;
+    width: 100% !important;
+  }
+  .agenda-title-group div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+  }
+  .agenda-date-subtitle {
+    font-size: 11px !important;
+    margin-bottom: 0 !important;
+    white-space: nowrap !important;
+  }
+  .agenda-date-subtitle::after {
+    content: " ·" !important;
+  }
+  .agenda-date-title {
+    font-size: 14px !important;
+    white-space: nowrap !important;
+  }
+  .agenda-header {
+    padding-bottom: var(--spacing-xs) !important;
+    margin-bottom: var(--spacing-sm) !important;
+  }
+  .agenda-stats-pill {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+  }
+  .agenda-round-title {
+    font-size: 11px !important;
+    margin-bottom: var(--spacing-xs) !important;
+  }
+  .agenda-item {
+    padding: 8px 10px !important;
+    margin-bottom: 6px !important;
+    gap: 8px !important;
+  }
+  .agenda-item-left {
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex-grow: 1 !important;
+  }
+  .agenda-checkbox {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+  .agenda-checkbox svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  .agenda-patient-details-link {
+    font-size: 14px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .agenda-item-right {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .agenda-round-badge {
+    font-size: 9px !important;
+    padding: 1px 5px !important;
+  }
+  .agenda-item-right .button-icon-circular {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  .agenda-item-right .button-icon-circular svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  #prev-day-btn, #next-day-btn {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  #prev-day-btn svg, #next-day-btn svg {
+    width: 14px !important;
+    height: 14px !important;
   }
   .sub-nav-stats {
     display: none; /* Hide stats in sub-nav on compact screens */

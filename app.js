@@ -7,6 +7,7 @@
 let patients = [];
 let currentMonth = null; // Date object representing the currently viewed month
 let selectedDate = null; // Date object representing the currently highlighted calendar day
+let patientListLimit = 10; // Default limit for displaying patients in Full clinical records
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS_FULL = {
@@ -193,21 +194,25 @@ function updateDashboardStats() {
 
   // Due Today count: patients scheduled on today's weekday
   const dueToday = patients.filter(p => p.schedules[todayDayName] !== undefined).length;
-  document.getElementById("metric-due-today").textContent = dueToday;
+  const dueTodayEl = document.getElementById("metric-due-today");
+  if (dueTodayEl) dueTodayEl.textContent = dueToday;
 
   // Total patients
-  document.getElementById("metric-total").textContent = patients.length;
+  const totalEl = document.getElementById("metric-total");
+  if (totalEl) totalEl.textContent = patients.length;
 
   // Week Completion percentage
   if (patients.length === 0) {
-    document.getElementById("metric-completion").textContent = "0%";
+    const completionEl = document.getElementById("metric-completion");
+    if (completionEl) completionEl.textContent = "0%";
     document.getElementById("sub-nav-stats").textContent = "0 of 0 Injected";
     return;
   }
 
   const injectedThisWeek = patients.filter(p => isInjectedInWeek(p, currentSun)).length;
   const completionPercent = Math.round((injectedThisWeek / patients.length) * 100);
-  document.getElementById("metric-completion").textContent = `${completionPercent}%`;
+  const completionEl = document.getElementById("metric-completion");
+  if (completionEl) completionEl.textContent = `${completionPercent}%`;
 
   // Sub-nav text updater
   document.getElementById("sub-nav-stats").textContent = `${injectedThisWeek} of ${patients.length} Injected This Week`;
@@ -357,7 +362,8 @@ function renderPatientDirectory() {
   if (!gridContainer || !searchInput || !emptyState) return;
 
   const searchVal = searchInput.value.toLowerCase();
-  const activeFilter = document.querySelector(".filter-chip.active")?.dataset.filter || "all";
+  const filterSelect = document.getElementById("patient-filter-select");
+  const activeFilter = filterSelect ? filterSelect.value : "all";
 
   // Clear previous cards inside the container
   gridContainer.innerHTML = "";
@@ -373,7 +379,7 @@ function renderPatientDirectory() {
 
     if (!matchSearch) return false;
 
-    // Filter chip match
+    // Filter select match
     const injectedThisWeek = isInjectedInWeek(patient, currentSun);
     if (activeFilter === "pending" && injectedThisWeek) return false;
     if (activeFilter === "completed" && !injectedThisWeek) return false;
@@ -381,12 +387,17 @@ function renderPatientDirectory() {
     return true;
   });
 
-  if (filteredPatients.length === 0) {
+  const totalFilteredCount = filteredPatients.length;
+  const slicedPatients = filteredPatients.slice(0, patientListLimit);
+
+  if (slicedPatients.length === 0) {
     emptyState.style.display = "flex";
+    const paginationContainer = document.getElementById("patient-list-pagination");
+    if (paginationContainer) paginationContainer.innerHTML = "";
   } else {
     emptyState.style.display = "none";
     
-    filteredPatients.forEach(patient => {
+    slicedPatients.forEach(patient => {
       const injectedThisWeek = isInjectedInWeek(patient, currentSun);
       
       const card = document.createElement("div");
@@ -438,6 +449,24 @@ function renderPatientDirectory() {
 
       gridContainer.appendChild(card);
     });
+
+    // Render pagination button if needed
+    const paginationContainer = document.getElementById("patient-list-pagination");
+    if (paginationContainer) {
+      if (totalFilteredCount > patientListLimit) {
+        paginationContainer.innerHTML = `
+          <button class="button-secondary-pill" id="show-more-patients-btn" style="padding: 10px 24px; font-weight: 600;">
+            Show More Patients (${totalFilteredCount - patientListLimit} remaining)
+          </button>
+        `;
+        document.getElementById("show-more-patients-btn").addEventListener("click", () => {
+          patientListLimit += 10;
+          renderPatientDirectory();
+        });
+      } else {
+        paginationContainer.innerHTML = "";
+      }
+    }
   }
 }
 
@@ -991,17 +1020,23 @@ document.addEventListener("DOMContentLoaded", () => {
     dashboardAddBtn.addEventListener("click", openAddPatientForm);
   }
 
-  // Search input typing filter
-  document.getElementById("patient-search-input").addEventListener("input", renderPatientDirectory);
-
-  // Filter chips click handler
-  document.querySelectorAll(".filter-chip").forEach(chip => {
-    chip.addEventListener("click", (e) => {
-      document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-      e.target.classList.add("active");
+  // Search input typing filter with limit reset
+  const searchInputEl = document.getElementById("patient-search-input");
+  if (searchInputEl) {
+    searchInputEl.addEventListener("input", () => {
+      patientListLimit = 10;
       renderPatientDirectory();
     });
-  });
+  }
+
+  // Filter select dropdown listener with limit reset
+  const filterSelectEl = document.getElementById("patient-filter-select");
+  if (filterSelectEl) {
+    filterSelectEl.addEventListener("change", () => {
+      patientListLimit = 10;
+      renderPatientDirectory();
+    });
+  }
 
   // Close modals when clicking on background overlay
   document.querySelectorAll(".modal-overlay").forEach(overlay => {
