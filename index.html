@@ -100,13 +100,6 @@
 
 
         <div class="action-buttons-group" style="margin-bottom: var(--spacing-lg);">
-          <button class="button-primary" id="dashboard-add-btn" style="padding: 10px 22px;">
-            <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Patient
-          </button>
           <a href="#database-section" class="button-secondary-pill">Search Database</a>
         </div>
 
@@ -120,7 +113,7 @@
                 </svg>
               </button>
               <div>
-                <span class="agenda-date-subtitle" id="agenda-date-subtitle">Selected Day Queue</span>
+                <span class="agenda-date-subtitle" id="agenda-date-subtitle">Selected Day</span>
                 <h3 class="agenda-date-title" id="agenda-date-title">Sunday, 31 May 2026</h3>
               </div>
               <button class="calendar-nav-btn" id="next-day-btn" aria-label="Next day" style="padding: 4px; display: inline-flex; align-items: center; justify-content: center; background-color: var(--color-surface-pearl); border-radius: var(--rounded-full); width: 32px; height: 32px;">
@@ -150,7 +143,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" class="search-input" id="patient-search-input" placeholder="Search by name, rounds, or notes...">
+            <input type="text" class="search-input" id="patient-search-input" placeholder="Search by name, sessions, or notes...">
           </div>
           
           <div class="filter-dropdown-wrapper">
@@ -202,30 +195,30 @@
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
-              <h3>Round Alarms Configuration</h3>
+              <h3>Session Alarms Configuration</h3>
             </div>
-            <p class="settings-card-desc">When active, the app queries schedules and fires notifications exactly 10 minutes before each round starts today</p>
+            <p class="settings-card-desc">When active, the app queries schedules and fires notifications exactly 10 minutes before each session starts today</p>
             
             <div class="setting-toggle-row">
-              <span class="setting-label">Enable Round Alerts</span>
+              <span class="setting-label">Enable Session Alerts</span>
               <label class="switch-container">
                 <input type="checkbox" id="alarm-toggle" checked>
                 <span class="switch-slider"></span>
               </label>
             </div>
 
-            <!-- Custom Round Alarm Times -->
+            <!-- Custom Session Alarm Times -->
             <div class="round-times-configurator">
               <div class="round-time-input-group">
-                <label for="alarm-time-r1">Round 1 Alert</label>
+                <label for="alarm-time-r1">Session 1 Alert</label>
                 <input type="time" id="alarm-time-r1" class="form-input-text" value="06:50">
               </div>
               <div class="round-time-input-group">
-                <label for="alarm-time-r2">Round 2 Alert</label>
+                <label for="alarm-time-r2">Session 2 Alert</label>
                 <input type="time" id="alarm-time-r2" class="form-input-text" value="10:50">
               </div>
               <div class="round-time-input-group">
-                <label for="alarm-time-r3">Round 3 Alert</label>
+                <label for="alarm-time-r3">Session 3 Alert</label>
                 <input type="time" id="alarm-time-r3" class="form-input-text" value="12:50">
               </div>
             </div>
@@ -299,15 +292,13 @@
       </div>
 
       <form class="modal-form" id="patient-form">
-        <input type="hidden" id="form-patient-id">
-        
-        <div class="modal-form-scroll-body">
+<div class="modal-form-scroll-body">
           <div class="form-section">
           <h3>Personal Information</h3>
           
           <div class="input-group">
             <label for="p-name">Name</label>
-            <input type="text" id="p-name" class="form-input-text" required placeholder="e.g., Johnathan Doe">
+            <input type="text" id="p-name" class="form-input-text" required>
           </div>
         </div>
 
@@ -316,11 +307,10 @@
           
           <!-- A. Clinic Availability & Custom Rounds Grid (Placed on TOP of Preferred Box) -->
           <div class="input-group">
-            <label>Clinic Availability & Round Schedules</label>
-            <p class="input-hint" style="margin-bottom: var(--spacing-sm);">Enable clinical weekdays by clicking their oval buttons, then select their scheduled round (Round 1–3) next to them</p>
+            <label>Clinic Availability & Session Schedules</label>
             
             <div class="availability-rounds-table" id="availability-rounds-table">
-              <!-- Sunday to Saturday rows featuring high-fidelity Oval Day Buttons followed directly by Round Dropdowns -->
+              <!-- Sunday to Saturday rows featuring high-fidelity Oval Day Buttons followed directly by Session Dropdowns -->
               <div class="availability-row">
                 <label class="weekday-chip">
                   <input type="checkbox" name="p-available-days" value="Sun" class="avail-day-checkbox">
@@ -328,9 +318,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Sun" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -341,9 +331,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Mon" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -354,9 +344,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Tue" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -367,9 +357,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Wed" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -380,9 +370,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Thu" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -393,9 +383,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Fri" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -406,9 +396,9 @@
                 </label>
                 <div class="availability-round-select-wrapper">
                   <select name="p-day-round-Sat" class="form-select-pill-sm" disabled>
-                    <option value="1">Round 1</option>
-                    <option value="2">Round 2</option>
-                    <option value="3">Round 3</option>
+                    <option value="1">Session 1</option>
+                    <option value="2">Session 2</option>
+                    <option value="3">Session 3</option>
                   </select>
                 </div>
               </div>
@@ -418,7 +408,6 @@
           <!-- B. Primary Preferred Schedule Box (Moved BELOW Clinic Availability Grid) -->
           <div class="preferred-schedule-box" style="margin-top: var(--spacing-lg);">
             <h4 class="box-title">Primary Preferred Schedule</h4>
-            <p class="box-subtitle">Specify the primary preferred day and session round for this patient</p>
             <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
               <div class="input-group">
                 <label for="p-usual-day">Preferred Injection Day</label>
@@ -433,19 +422,18 @@
                 </select>
               </div>
               <div class="input-group">
-                <label for="p-usual-round">Preferred Round</label>
+                <label for="p-usual-round">Preferred Session</label>
                 <select id="p-usual-round" class="form-select-pill">
-                  <option value="1">Round 1</option>
-                  <option value="2">Round 2</option>
-                  <option value="3">Round 3</option>
+                  <option value="1">Session 1</option>
+                  <option value="2">Session 2</option>
+                  <option value="3">Session 3</option>
                 </select>
               </div>
             </div>
           </div>
 
           <div class="preferred-schedule-box" style="margin-top: var(--spacing-md);">
-            <h4 class="box-title">Active Treatment Window</h4>
-            <p class="box-subtitle">Select the first and last dates of injection for dashboard queue display</p>
+            <h4 class="box-title">Active Treatment</h4>
             <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
               <div class="input-group">
                 <label for="p-start-date">First Injection Date</label>
@@ -455,6 +443,14 @@
                 <label for="p-end-date">Last Injection Date</label>
                 <input type="date" id="p-end-date" class="form-input-text" required>
               </div>
+            </div>
+            <div class="input-group" style="margin-top: var(--spacing-sm);">
+              <label for="p-frequency">Frequency</label>
+              <select id="p-frequency" class="form-select-pill">
+                <option value="1">Once per week</option>
+                <option value="2">Once per 2 weeks</option>
+                <option value="4">Once per 4 weeks</option>
+              </select>
             </div>
           </div>
         </div>

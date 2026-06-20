@@ -71,6 +71,12 @@ function seedDatabase() {
         patient.endDate = "2026-12-31";
         requiresMigration = true;
       }
+
+      // 5. Ensure frequency exists for treatment tracking
+      if (!patient.frequency) {
+        patient.frequency = 1;
+        requiresMigration = true;
+      }
     });
 
     if (requiresMigration) {
@@ -94,7 +100,8 @@ function seedDatabase() {
         notes: "Patient prefers a slow injection. Monitor for mild site redness. Patient has a mild penicillin allergy",
         injectionLogs: ["2026-05-25"], // Completed on Monday of the current week (May 25, 2026)
         startDate: "2026-05-01",
-        endDate: "2026-12-31"
+        endDate: "2026-12-31",
+        frequency: 1
       },
       {
         id: "pat_2",
@@ -108,7 +115,8 @@ function seedDatabase() {
         notes: "Check blood glucose levels prior to administration. Remind patient about weekly dietary guidelines",
         injectionLogs: [], // Pending for this week
         startDate: "2026-05-01",
-        endDate: "2026-12-31"
+        endDate: "2026-12-31",
+        frequency: 1
       },
       {
         id: "pat_3",
@@ -123,7 +131,8 @@ function seedDatabase() {
         notes: "Administer with a high-gauge needle. Patient takes folic acid daily. Check blood count lab sheet monthly",
         injectionLogs: [], // Pending for this week
         startDate: "2026-05-01",
-        endDate: "2026-12-31"
+        endDate: "2026-12-31",
+        frequency: 1
       },
       {
         id: "pat_4",
@@ -137,7 +146,8 @@ function seedDatabase() {
         notes: "Keep medication refrigerated until 30 minutes before injection. Patient self-injects occasionally under supervision",
         injectionLogs: ["2026-05-31"], // Completed today (Sunday May 31, 2026)
         startDate: "2026-05-01",
-        endDate: "2026-12-31"
+        endDate: "2026-12-31",
+        frequency: 1
       }
     ];
     saveToLocalStorage();
@@ -153,7 +163,17 @@ function saveToLocalStorage() {
 
 // Returns the Sunday date of the week containing the given date
 function getStartOfWeek(d) {
-  const date = new Date(d);
+  let date;
+  if (typeof d === "string") {
+    const parts = d.split('-');
+    if (parts.length === 3) {
+      date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      date = new Date(d);
+    }
+  } else {
+    date = new Date(d);
+  }
   const day = date.getDay(); // Sunday=0, Monday=1, etc.
   const diff = date.getDate() - day; // Subtract day index to get Sunday
   const sunday = new Date(date.setDate(diff));
@@ -194,7 +214,17 @@ function isInjectedInWeekOfDate(patient, cellDate) {
 
 // Format Date into user-friendly "date month year" e.g., "31 May 2026"
 function formatPrettyDate(date) {
-  const d = new Date(date);
+  let d;
+  if (typeof date === "string") {
+    const parts = date.split('-');
+    if (parts.length === 3) {
+      d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      d = new Date(date);
+    }
+  } else {
+    d = new Date(date);
+  }
   const day = d.getDate();
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const month = monthNames[d.getMonth()];
@@ -211,13 +241,21 @@ function updateDashboardStats() {
   const currentSun = getStartOfWeek(todayDate);
   const todayStr = formatDateString(todayDate);
 
-  // Due Today count: patients scheduled on today's weekday and within active treatment window
+  // Due Today count: patients scheduled on today's weekday and within active treatment window and matching frequency
   const dueToday = patients.filter(p => {
     const isScheduled = p.schedules[todayDayName] !== undefined;
     if (!isScheduled) return false;
     const start = p.startDate || "2000-01-01";
     const end = p.endDate || "2099-12-31";
-    return todayStr >= start && todayStr <= end;
+    const withinDates = todayStr >= start && todayStr <= end;
+    if (!withinDates) return false;
+
+    // Calculate frequency occurrence
+    const startSun = getStartOfWeek(start);
+    const diffDays = Math.round((currentSun - startSun) / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.round(diffDays / 7);
+    const freq = parseInt(p.frequency) || 1;
+    return diffWeeks >= 0 && (diffWeeks % freq === 0);
   }).length;
   const dueTodayEl = document.getElementById("metric-due-today");
   if (dueTodayEl) dueTodayEl.textContent = dueToday;
@@ -258,17 +296,26 @@ function renderDailyAgenda(date) {
   const prettyDate = formatPrettyDate(date);
   const weekdayFullName = WEEKDAYS_FULL[weekdayName];
 
-  subtitleEl.textContent = `${weekdayFullName} Queue`;
+  subtitleEl.textContent = `${weekdayFullName}`;
   titleEl.textContent = prettyDate;
   agendaSection.style.display = "block";
 
-  // Filter patients scheduled on this weekday and within active treatment window
+  // Filter patients scheduled on this weekday, within active treatment window, and matching frequency
   const scheduled = patients.filter(p => {
     const isScheduled = p.schedules[weekdayName] !== undefined;
     if (!isScheduled) return false;
     const start = p.startDate || "2000-01-01";
     const end = p.endDate || "2099-12-31";
-    return dateStr >= start && dateStr <= end;
+    const withinDates = dateStr >= start && dateStr <= end;
+    if (!withinDates) return false;
+
+    // Calculate frequency occurrence
+    const startSun = getStartOfWeek(start);
+    const selectedSun = getStartOfWeek(date);
+    const diffDays = Math.round((selectedSun - startSun) / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.round(diffDays / 7);
+    const freq = parseInt(p.frequency) || 1;
+    return diffWeeks >= 0 && (diffWeeks % freq === 0);
   });
 
   if (scheduled.length === 0) {
@@ -283,7 +330,7 @@ function renderDailyAgenda(date) {
 
   listContainer.innerHTML = "";
 
-  // Group scheduled patients by Rounds 1, 2, and 3
+  // Group scheduled patients by Sessions 1, 2, and 3
   for (let round = 1; round <= 3; round++) {
     const roundPatients = scheduled.filter(p => parseInt(p.schedules[weekdayName]) === round);
     if (roundPatients.length === 0) continue;
@@ -293,7 +340,7 @@ function renderDailyAgenda(date) {
 
     const roundTitle = document.createElement("div");
     roundTitle.className = "agenda-round-title";
-    roundTitle.textContent = `Round ${round}`;
+    roundTitle.textContent = `Session ${round}`;
     roundGroup.appendChild(roundTitle);
 
     roundPatients.forEach(patient => {
@@ -334,13 +381,13 @@ function renderDailyAgenda(date) {
       leftCol.appendChild(nameLink);
       item.appendChild(leftCol);
 
-      // Right Column: Details trigger icon or round status badge
+      // Right Column: Details trigger icon or Session status badge
       const rightCol = document.createElement("div");
       rightCol.className = "agenda-item-right";
 
       const roundBadge = document.createElement("span");
       roundBadge.className = "agenda-round-badge";
-      roundBadge.textContent = `Round ${round}`;
+      roundBadge.textContent = `Session ${round}`;
       rightCol.appendChild(roundBadge);
 
       const profileBtn = document.createElement("button");
@@ -436,7 +483,7 @@ function renderPatientDirectory() {
 
       // Format custom schedules list for card preview
       const schedulesSummary = Object.entries(patient.schedules)
-        .map(([day, round]) => `${day} (R${round})`)
+        .map(([day, round]) => `${day} (S${round})`)
         .join(", ");
 
       // HTML template for patient card styled in Apple Store Grid Card chassis (removed icon)
@@ -447,14 +494,14 @@ function renderPatientDirectory() {
         
         <div class="patient-card-body">
           <h3>${patient.name}</h3>
-          <p class="patient-card-med">Primary schedule: ${WEEKDAYS_FULL[patient.usualDay]} · Round ${patient.usualRound}</p>
+          <p class="patient-card-med">Primary schedule: ${WEEKDAYS_FULL[patient.usualDay]} · Session ${patient.usualRound}</p>
           
           <div class="patient-meta-list" style="margin-top: 12px;">
             <div class="meta-item">
               <span class="meta-label">Schedule Matrix:</span> ${schedulesSummary || "No schedules set"}
             </div>
             <div class="meta-item" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
-              <span class="meta-label">Notes:</span> ${patient.notes || "None"}
+              <span class="meta-label">Notes:</span> ${patient.notes ? patient.notes : `<span style="color: var(--color-ink-muted-48); font-style: italic;">No Note</span>`}
             </div>
           </div>
         </div>
@@ -515,10 +562,9 @@ function openPatientDetails(patientId) {
     logsHtml = `
       <div class="detail-history-list">
         ${sortedLogs.map(logDate => {
-          const logDateObj = new Date(logDate);
           return `
             <div class="history-item">
-              <span class="history-item-date">${formatPrettyDate(logDateObj)}</span>
+              <span class="history-item-date">${formatPrettyDate(logDate)}</span>
               <span class="history-item-badge">Injected</span>
             </div>
           `;
@@ -531,9 +577,13 @@ function openPatientDetails(patientId) {
   const matrixDetailsHtml = Object.entries(patient.schedules)
     .map(([day, round]) => `
       <div style="background-color: var(--color-surface-pearl); border: 1px solid var(--color-hairline); border-radius: var(--rounded-sm); padding: var(--spacing-xs) var(--spacing-sm); font-size: 13px; font-weight: 600;">
-        ${WEEKDAYS_FULL[day]}: Round ${round}
+        ${WEEKDAYS_FULL[day]}: Session ${round}
       </div>
     `).join("") || `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No clinic availability configured</p>`;
+
+  let frequencyLabel = "Once per week";
+  if (patient.frequency == 2) frequencyLabel = "Once per 2 weeks";
+  if (patient.frequency == 4) frequencyLabel = "Once per 4 weeks";
 
   detailBody.innerHTML = `
     <div class="detail-main-header">
@@ -552,7 +602,7 @@ function openPatientDetails(patientId) {
       </div>
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">Primary Schedule Session</div>
-        <div class="detail-grid-item-value">Round ${patient.usualRound}</div>
+        <div class="detail-grid-item-value">Session ${patient.usualRound}</div>
       </div>
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">First Injection Date</div>
@@ -561,6 +611,10 @@ function openPatientDetails(patientId) {
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">Last Injection Date</div>
         <div class="detail-grid-item-value">${patient.endDate ? formatPrettyDate(patient.endDate) : "Not set"}</div>
+      </div>
+      <div class="detail-grid-item">
+        <div class="detail-grid-item-label">Frequency</div>
+        <div class="detail-grid-item-value">${frequencyLabel}</div>
       </div>
     </div>
 
@@ -571,7 +625,7 @@ function openPatientDetails(patientId) {
 
     <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs);">Notes</h3>
     <div class="detail-notes-box">
-      <p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes || "No practice notes entered"}</p>
+      ${patient.notes ? `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes}</p>` : `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink-muted-48); font-style: italic;">No Note</p>`}
     </div>
 
     <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Weekly Injection Log History</h3>
@@ -635,6 +689,7 @@ function openAddPatientForm() {
   const oneYearLater = new Date();
   oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
   document.getElementById("p-end-date").value = formatDateString(oneYearLater);
+  document.getElementById("p-frequency").value = "1";
 
   openModal("patient-modal-overlay");
 }
@@ -652,6 +707,7 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-notes").value = patient.notes || "";
   document.getElementById("p-start-date").value = patient.startDate || "";
   document.getElementById("p-end-date").value = patient.endDate || "";
+  document.getElementById("p-frequency").value = String(patient.frequency || "1");
 
   // Set clinic availability checkboxes and round dropdown values
   WEEKDAYS.forEach(day => {
@@ -699,8 +755,9 @@ function handleFormSubmit(e) {
   const notes = document.getElementById("p-notes").value;
   const startDate = document.getElementById("p-start-date").value;
   const endDate = document.getElementById("p-end-date").value;
+  const frequency = parseInt(document.getElementById("p-frequency").value) || 1;
 
-  // Retrieve availability weekdays and custom rounds
+  // Retrieve availability weekdays and custom sessions
   const schedules = {};
   
   WEEKDAYS.forEach(day => {
@@ -722,14 +779,14 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, usualDay, usualRound, schedules, notes, startDate, endDate
+        name, usualDay, usualRound, schedules, notes, startDate, endDate, frequency
       };
     }
   } else {
     // Create new profile
     const newPatient = {
       id: "pat_" + Date.now(),
-      name, usualDay, usualRound, schedules, notes, startDate, endDate,
+      name, usualDay, usualRound, schedules, notes, startDate, endDate, frequency,
       injectionLogs: []
     };
     patients.push(newPatient);
@@ -855,35 +912,35 @@ function triggerTestNotification() {
   }
 }
 
-// Fires the system alarm notification listing patients scheduled for a specific round today
+// Fires the system alarm notification listing patients scheduled for a specific session today
 function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
   const todayDate = new Date();
   const dayIndex = todayDate.getDay(); // Sun=0, Mon=1, etc.
   const todayDayName = WEEKDAYS[dayIndex];
 
-  // Find patients due for injection today in this specific round
+  // Find patients due for injection today in this specific session
   const dueThisRound = patients.filter(p => {
     const mappedRound = p.schedules[todayDayName];
     return mappedRound !== undefined && parseInt(mappedRound) === roundNum;
   });
 
-  let title = `Vial Round ${roundNum} Alarm`;
+  let title = `Vial Session ${roundNum} Alarm`;
   let body = "";
 
   if (isForcedTest) {
     title = "Vial — Smart Watch Sync Verified";
     if (dueThisRound.length === 0) {
-      body = `Diagnostic complete! Test note received on watch (No Round ${roundNum} patients scheduled today) Total patient database: ${patients.length} records`;
+      body = `Diagnostic complete! Test note received on watch (No Session ${roundNum} patients scheduled today) Total patient database: ${patients.length} records`;
     } else {
       const namesList = dueThisRound.map(p => p.name).join(", ");
-      body = `Round ${roundNum} diagnostic alert: ${dueThisRound.length} scheduled: ${namesList}`;
+      body = `Session ${roundNum} diagnostic alert: ${dueThisRound.length} scheduled: ${namesList}`;
     }
   } else {
     if (dueThisRound.length === 0) {
       return; // Do not push alerts if nobody is scheduled
     } else {
       const namesList = dueThisRound.map(p => p.name).join(", ");
-      body = `Round ${roundNum} starting: ${dueThisRound.length} patient injections due: ${namesList}`;
+      body = `Session ${roundNum} starting: ${dueThisRound.length} patient injections due: ${namesList}`;
     }
   }
 
@@ -893,7 +950,7 @@ function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
       body: body,
       icon: "icon-192.png",
       badge: "icon-192.png",
-      tag: `vial-round-alarm-${roundNum}-${formatDateString(todayDate)}`,
+      tag: `vial-session-alarm-${roundNum}-${formatDateString(todayDate)}`,
       requireInteraction: true // Keeps notification visible on OS/Watch until checked
     };
 
@@ -905,7 +962,7 @@ function fireRoundScheduledNotification(roundNum, isForcedTest = false) {
     } else {
       new Notification(title, options);
     }
-    console.log(`System round ${roundNum} notification fired successfully`);
+    console.log(`System session ${roundNum} notification fired successfully`);
   } else {
     // Fallback in-app alert
     alert(`${title}\n\n${body}`);
