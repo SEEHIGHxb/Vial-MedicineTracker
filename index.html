@@ -45,6 +45,7 @@
     </div>
     <div class="drawer-menu">
       <a href="#overview-section" class="drawer-item active">Dashboard</a>
+      <a href="#calendar-section" class="drawer-item">Calendar</a>
       <a href="#database-section" class="drawer-item">Patients</a>
       <a href="#settings-section" class="drawer-item">Settings</a>
     </div>
@@ -67,6 +68,7 @@
       </div>
       <div class="nav-menu">
         <a href="#overview-section" class="nav-item active">Overview</a>
+        <a href="#calendar-section" class="nav-item">Calendar</a>
         <a href="#database-section" class="nav-item">Patients</a>
         <a href="#settings-section" class="nav-item">Settings</a>
       </div>
@@ -126,6 +128,37 @@
           </div>
           <div class="agenda-list" id="agenda-patients-list">
             <!-- Populated dynamically via app.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Section 2: Calendar & Injection Log (Parchment Canvas) -->
+    <section class="product-tile-parchment" id="calendar-section">
+      <div class="tile-content calendar-tile-content">
+        <p class="tagline">Treatment Calendar</p>
+        <h2 class="display-lg">Monthly Schedule</h2>
+        <p class="lead">Select patient schedules and record administered weekly doses instantly</p>
+        
+        <!-- Weekly Grid Layout -->
+        <div class="calendar-wrapper">
+          <div class="calendar-header-row">
+            <button class="calendar-nav-btn" id="prev-month-btn" aria-label="Previous month">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <span class="calendar-week-range" id="calendar-month-label">June 2026</span>
+            <button class="calendar-nav-btn" id="next-month-btn" aria-label="Next month">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- The Monthly Day Grid -->
+          <div class="monthly-grid" id="monthly-calendar-grid">
+            <!-- Dynamically generated month grid will be injected here -->
           </div>
         </div>
       </div>
@@ -522,6 +555,7 @@
         <div class="footer-col">
           <span class="footer-col-title">Vial App</span>
           <a href="#overview-section" class="footer-link">Overview Dashboard</a>
+          <a href="#calendar-section" class="footer-link">Monthly Calendar</a>
           <a href="#database-section" class="footer-link">Patient Database</a>
           <a href="#settings-section" class="footer-link">System Settings</a>
         </div>
