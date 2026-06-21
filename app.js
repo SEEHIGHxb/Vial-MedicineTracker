@@ -1067,35 +1067,47 @@ function startAlarmTimeWatcher() {
   }, 30000); // Poll clock check twice a minute
 }
 
-// Initialize Custom Round Times from Local Storage on load
+// Initialize Custom Session Times from Local Storage on load
 function loadSettingsConfig() {
-  const alarmState = localStorage.getItem("vial_alarm_enabled");
-  if (alarmState !== null) {
-    document.getElementById("alarm-toggle").checked = alarmState === "true";
+  const alarmToggle = document.getElementById("alarm-toggle");
+  if (alarmToggle) {
+    const alarmState = localStorage.getItem("vial_alarm_enabled");
+    if (alarmState !== null) {
+      alarmToggle.checked = alarmState === "true";
+    }
+    alarmToggle.addEventListener("change", (e) => {
+      localStorage.setItem("vial_alarm_enabled", e.target.checked);
+    });
   }
 
   const r1 = localStorage.getItem("vial_alarm_r1") || "06:50";
   const r2 = localStorage.getItem("vial_alarm_r2") || "10:50";
   const r3 = localStorage.getItem("vial_alarm_r3") || "12:50";
 
-  document.getElementById("alarm-time-r1").value = r1;
-  document.getElementById("alarm-time-r2").value = r2;
-  document.getElementById("alarm-time-r3").value = r3;
+  const r1Input = document.getElementById("alarm-time-r1");
+  if (r1Input) {
+    r1Input.value = r1;
+    r1Input.addEventListener("change", (e) => {
+      localStorage.setItem("vial_alarm_r1", e.target.value);
+    });
+  }
 
-  // Bind change events to persist configurations
-  document.getElementById("alarm-toggle").addEventListener("change", (e) => {
-    localStorage.setItem("vial_alarm_enabled", e.target.checked);
-  });
-  document.getElementById("alarm-time-r1").addEventListener("change", (e) => {
-    localStorage.setItem("vial_alarm_r1", e.target.value);
-  });
-  document.getElementById("alarm-time-r2").addEventListener("change", (e) => {
-    localStorage.setItem("vial_alarm_r2", e.target.value);
-  });
-  document.getElementById("alarm-time-r3").addEventListener("change", (e) => {
-    localStorage.setItem("vial_alarm_r3", e.target.value);
-    // Bind clear database operations button
-  });
+  const r2Input = document.getElementById("alarm-time-r2");
+  if (r2Input) {
+    r2Input.value = r2;
+    r2Input.addEventListener("change", (e) => {
+      localStorage.setItem("vial_alarm_r2", e.target.value);
+    });
+  }
+
+  const r3Input = document.getElementById("alarm-time-r3");
+  if (r3Input) {
+    r3Input.value = r3;
+    r3Input.addEventListener("change", (e) => {
+      localStorage.setItem("vial_alarm_r3", e.target.value);
+    });
+  }
+
   const clearDbBtn = document.getElementById("clear-database-btn");
   if (clearDbBtn) {
     clearDbBtn.addEventListener("click", () => {
@@ -1139,9 +1151,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeDrawerNavigation();
 
   // 9. Event Listeners binding
-
+  
   // Add patient navigation action
-  document.getElementById("add-patient-btn").addEventListener("click", openAddPatientForm);
+  const addPatientBtn = document.getElementById("add-patient-btn");
+  if (addPatientBtn) {
+    addPatientBtn.addEventListener("click", openAddPatientForm);
+  }
 
   // Safely retrieve empty-add-btn to prevent click event binding failures if database is cleared/loaded
   const emptyAddBtn = document.getElementById("empty-add-btn");
@@ -1150,13 +1165,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Form submission
-  document.getElementById("patient-form").addEventListener("submit", handleFormSubmit);
+  const patientForm = document.getElementById("patient-form");
+  if (patientForm) {
+    patientForm.addEventListener("submit", handleFormSubmit);
+  }
 
   // Modal Cancel and Close button clicks
-  document.getElementById("close-modal-btn").addEventListener("click", () => closeModal("patient-modal-overlay"));
-  document.getElementById("cancel-form-btn").addEventListener("click", () => closeModal("patient-modal-overlay"));
-  document.getElementById("close-detail-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
-  document.getElementById("close-detail-bottom-btn").addEventListener("click", () => closeModal("detail-modal-overlay"));
+  const closeModalBtn = document.getElementById("close-modal-btn");
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener("click", () => closeModal("patient-modal-overlay"));
+  }
+  const cancelFormBtn = document.getElementById("cancel-form-btn");
+  if (cancelFormBtn) {
+    cancelFormBtn.addEventListener("click", () => closeModal("patient-modal-overlay"));
+  }
+  const closeDetailBtn = document.getElementById("close-detail-btn");
+  if (closeDetailBtn) {
+    closeDetailBtn.addEventListener("click", () => closeModal("detail-modal-overlay"));
+  }
+  const closeDetailBottomBtn = document.getElementById("close-detail-bottom-btn");
+  if (closeDetailBottomBtn) {
+    closeDetailBottomBtn.addEventListener("click", () => closeModal("detail-modal-overlay"));
+  }
 
   // Day Navigator button clicks
   const prevDayBtn = document.getElementById("prev-day-btn");
@@ -1208,7 +1238,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Notification Permissions & Test triggers
-  document.getElementById("trigger-test-notif-btn").addEventListener("click", triggerTestNotification);
+  const triggerTestNotifBtn = document.getElementById("trigger-test-notif-btn");
+  if (triggerTestNotifBtn) {
+    triggerTestNotifBtn.addEventListener("click", triggerTestNotification);
+  }
   
   // Prompt notification permission request slightly after load
   setTimeout(requestNotificationPermission, 2000);
