@@ -867,6 +867,53 @@ function renderPatientDirectory() {
   }
 }
 
+// Resolves the next injection date timezone-safely
+function getNextInjectionDate(patient) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const freq = parseInt(patient.frequency) || 1;
+  const baseSun = getFirstActiveWeekSunday(patient);
+  const todaySun = getStartOfWeek(today);
+  const diffDays = Math.round((todaySun - baseSun) / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.round(diffDays / 7);
+
+  if (diffWeeks < 0) {
+    // Today is before first week starts. Next injection is the first checklist date.
+    return getPatientChecklistDate(patient, baseSun);
+  }
+
+  // Check if they have already been injected in the current cycle
+  const cycleIndex = Math.floor(diffWeeks / freq);
+  const cycleStartSun = new Date(baseSun);
+  cycleStartSun.setDate(baseSun.getDate() + cycleIndex * freq * 7);
+  const cycleEndSat = new Date(cycleStartSun);
+  cycleEndSat.setDate(cycleStartSun.getDate() + freq * 7 - 1);
+  const cycleStartStr = formatDateString(cycleStartSun);
+  const cycleEndSatStr = formatDateString(cycleEndSat);
+
+  const hasInjectedThisCycle = patient.injectionLogs.some(logDate => {
+    return logDate >= cycleStartStr && logDate <= cycleEndSatStr;
+  });
+
+  if (hasInjectedThisCycle) {
+    // Already injected in this cycle, look at next cycle
+    const nextCycleRef = new Date(today);
+    nextCycleRef.setDate(today.getDate() + freq * 7);
+    return getPatientChecklistDate(patient, nextCycleRef);
+  } else {
+    // Pending in current cycle
+    const currentChecklistDate = getPatientChecklistDate(patient, today);
+    if (currentChecklistDate) {
+      return currentChecklistDate;
+    }
+    // Fallback if current cycle check returns null, check next cycle
+    const nextCycleRef = new Date(today);
+    nextCycleRef.setDate(today.getDate() + freq * 7);
+    return getPatientChecklistDate(patient, nextCycleRef);
+  }
+}
+
 // 4. Patient Profile Details Modal
 function openPatientDetails(patientId) {
   const patient = patients.find(p => p.id === patientId);
@@ -874,12 +921,25 @@ function openPatientDetails(patientId) {
 
   const detailBody = document.getElementById("detail-modal-body");
 
+  // Calculate and format next injection row
+  const nextInjectionDate = getNextInjectionDate(patient);
+  let nextInjectionHtml = "";
+  if (nextInjectionDate) {
+    nextInjectionHtml = `
+      <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs);">
+        <span class="history-item-date">${formatPrettyDate(nextInjectionDate)}</span>
+        <span class="history-item-badge">Next Injection</span>
+      </div>
+    `;
+  }
+
   // Generate logs history list
   let logsHtml = `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No past injections logged</p>`;
   if (patient.injectionLogs.length > 0) {
     const sortedLogs = [...patient.injectionLogs].sort().reverse();
     logsHtml = `
       <div class="detail-history-list">
+        ${nextInjectionHtml}
         ${sortedLogs.map(logDate => {
           return `
             <div class="history-item">
@@ -888,6 +948,12 @@ function openPatientDetails(patientId) {
             </div>
           `;
         }).join("")}
+      </div>
+    `;
+  } else if (nextInjectionHtml) {
+    logsHtml = `
+      <div class="detail-history-list">
+        ${nextInjectionHtml}
       </div>
     `;
   }
@@ -915,13 +981,9 @@ function openPatientDetails(patientId) {
     </div>
 
     <div class="detail-grid-section" style="margin-top: var(--spacing-lg);">
-      <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Primary Schedule Day</div>
-        <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]}</div>
-      </div>
-      <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Primary Schedule Session</div>
-        <div class="detail-grid-item-value">Session ${patient.usualRound}</div>
+      <div class="detail-grid-item" style="grid-column: span 2;">
+        <div class="detail-grid-item-label">Schedule Day</div>
+        <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]} : Session ${patient.usualRound}</div>
       </div>
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">First Injection Date</div>
@@ -941,17 +1003,17 @@ function openPatientDetails(patientId) {
       </div>
     </div>
 
-    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability Matrix</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability Matrix</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
       ${matrixDetailsHtml}
     </div>
 
-    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs);">Notes</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs);">Notes</h3>
     <div class="detail-notes-box">
       ${patient.notes ? `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes}</p>` : `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink-muted-48); font-style: italic;">No Note</p>`}
     </div>
 
-    <h3 style="font-size: 14px; text-transform: uppercase; color: var(--color-ink-muted-48); letter-spacing: 0.05em; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Weekly Injection Log History</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Injection Log</h3>
     ${logsHtml}
   `;
 

@@ -1296,15 +1296,15 @@ input:checked + .switch-slider:before {
 }
 
 .detail-patient-avatar {
-  width: 64px;
-  height: 64px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--rounded-full);
   background-color: var(--color-primary);
   color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -1381,6 +1381,15 @@ input:checked + .switch-slider:before {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.history-item.next-injection {
+  background-color: rgba(255, 149, 0, 0.04);
+  border: 1px solid rgba(255, 149, 0, 0.15);
+}
+
+.history-item.next-injection .history-item-badge {
+  color: #ff9500;
 }
 
 /* 13. Footer Layout (Apple Footer style) */
