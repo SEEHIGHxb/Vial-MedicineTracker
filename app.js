@@ -985,27 +985,22 @@ function openPatientDetails(patientId) {
         <div class="detail-grid-item-label">Schedule Day</div>
         <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]} : Session ${patient.usualRound}</div>
       </div>
-      <div class="detail-grid-item">
+      <div class="detail-grid-item" style="grid-column: span 2;">
         <div class="detail-grid-item-label">First Injection Date</div>
         <div class="detail-grid-item-value">${patient.startDate ? formatPrettyDate(patient.startDate) : "Not set"}</div>
+      </div>
+      <div class="detail-grid-item" style="grid-column: span 2;">
+        <div class="detail-grid-item-label">Last Injection Date (Calculated)</div>
+        <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDate(patient))}</div>
       </div>
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">Dose Course</div>
         <div class="detail-grid-item-value">${patient.doses || 10} Doses</div>
       </div>
       <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Last Injection Date (Calculated)</div>
-        <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDate(patient))}</div>
-      </div>
-      <div class="detail-grid-item">
         <div class="detail-grid-item-label">Frequency</div>
         <div class="detail-grid-item-value">${frequencyLabel}</div>
       </div>
-    </div>
-
-    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability Matrix</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
-      ${matrixDetailsHtml}
     </div>
 
     <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs);">Notes</h3>
@@ -1015,6 +1010,11 @@ function openPatientDetails(patientId) {
 
     <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Injection Log</h3>
     ${logsHtml}
+
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
+      ${matrixDetailsHtml}
+    </div>
   `;
 
   // Bind edit action inside the detail card

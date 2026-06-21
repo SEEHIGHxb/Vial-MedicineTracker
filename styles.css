@@ -1321,14 +1321,14 @@ input:checked + .switch-slider:before {
 .detail-grid-section {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .detail-grid-item {
   background-color: var(--color-canvas-parchment);
   border-radius: var(--rounded-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 6px 10px;
 }
 
 .detail-grid-item-label {
