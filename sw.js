@@ -2,7 +2,7 @@
  * Vial — Service Worker for offline PWA functionality
  */
 
-const CACHE_NAME = "vial-cache-v5";
+const CACHE_NAME = "vial-cache-v6";
 const ASSETS = [
   "index.html",
   "styles.css",

@@ -290,7 +290,7 @@ function calculateLastInjectionDate(patient) {
 }
 
 // Checks if a patient is scheduled and active on a specific date (within start/end window & matching frequency)
-function isPatientActiveOnDate(patient, date) {
+function isPatientScheduledAndActiveOnDate(patient, date) {
   const weekdayName = WEEKDAYS[date.getDay()];
   const isScheduled = patient.schedules[weekdayName] !== undefined;
   if (!isScheduled) return false;
@@ -319,35 +319,106 @@ function isPatientActiveOnDate(patient, date) {
   return diffWeeks >= 0 && (diffWeeks % freq === 0);
 }
 
-// Calculates the active preferred date for a patient in the week of cellDate
-function getPatientActivePreferredDate(patient, cellDate) {
-  const sunday = getStartOfWeek(cellDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+// Finds the checklist date for the patient in the cycle containing referenceDate
+function getPatientChecklistDate(patient, referenceDate) {
+  const baseSun = getFirstActiveWeekSunday(patient);
+  const refSun = getStartOfWeek(referenceDate);
+  const diffDays = Math.round((refSun - baseSun) / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.round(diffDays / 7);
 
-  // 1. Get the primary preferred date for this week
-  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
-  const preferredDate = new Date(sunday);
-  preferredDate.setDate(sunday.getDate() + (dayIndex >= 0 ? dayIndex : 1));
-  preferredDate.setHours(0, 0, 0, 0);
+  if (diffWeeks < 0) return null;
 
-  // 2. Check if primary preferred date has passed relative to today
-  if (preferredDate < today) {
-    // Has passed! Look for the next incoming scheduled day starting from today
-    // We check the next 7 days starting from today to find the first scheduled day
-    for (let offset = 0; offset < 7; offset++) {
-      const nextDate = new Date(today);
-      nextDate.setDate(today.getDate() + offset);
-      
-      // Is the patient active on this day?
-      if (isPatientActiveOnDate(patient, nextDate)) {
-        return nextDate;
+  const freq = parseInt(patient.frequency) || 1;
+  const cycleIndex = Math.floor(diffWeeks / freq);
+  
+  const cycleStartSun = new Date(baseSun);
+  cycleStartSun.setDate(baseSun.getDate() + cycleIndex * freq * 7);
+  cycleStartSun.setHours(0, 0, 0, 0);
+
+  const cycleEndSat = new Date(cycleStartSun);
+  cycleEndSat.setDate(cycleStartSun.getDate() + freq * 7 - 1);
+  cycleEndSat.setHours(23, 59, 59, 999);
+  const cycleEndSatStr = formatDateString(cycleEndSat);
+
+  // Check if cycle is within patient active treatment window
+  const start = patient.startDate || "2000-01-01";
+  const doses = parseInt(patient.doses) || 10;
+  const totalWeeks = (doses - 1) * freq;
+  const endSun = new Date(baseSun);
+  endSun.setDate(baseSun.getDate() + totalWeeks * 7);
+  const endWeekSaturday = new Date(endSun);
+  endWeekSaturday.setDate(endSun.getDate() + 6);
+  const endDateStr = formatDateString(endWeekSaturday);
+
+  const cycleStartStr = formatDateString(cycleStartSun);
+  if (cycleStartStr > endDateStr || cycleEndSatStr < start) {
+    return null;
+  }
+
+  // 1. Check if patient was injected in this cycle
+  const actualInjectedDateStr = patient.injectionLogs.find(logDate => {
+    return logDate >= cycleStartStr && logDate <= cycleEndSatStr;
+  });
+
+  if (actualInjectedDateStr !== undefined) {
+    const parts = actualInjectedDateStr.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(actualInjectedDateStr);
+  }
+
+  // 2. Find available clinic dates in this cycle
+  const availableDates = [];
+  for (let offset = 0; offset < freq * 7; offset++) {
+    const candidateDate = new Date(cycleStartSun);
+    candidateDate.setDate(cycleStartSun.getDate() + offset);
+    const candidateDateStr = formatDateString(candidateDate);
+    
+    if (candidateDateStr >= start && candidateDateStr <= endDateStr) {
+      const dayName = WEEKDAYS[candidateDate.getDay()];
+      if (patient.schedules[dayName] !== undefined) {
+        availableDates.push(candidateDate);
       }
     }
   }
 
-  // If it hasn't passed, or if no incoming day is found, return the primary preferred date
-  return preferredDate;
+  if (availableDates.length === 0) return null;
+
+  // 3. Get the primary preferred date for this cycle (usualDay in week 0 of the cycle)
+  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const primaryDate = new Date(cycleStartSun);
+  primaryDate.setDate(cycleStartSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
+  primaryDate.setHours(0, 0, 0, 0);
+
+  // 4. Determine checklist date relative to today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (today < primaryDate) {
+    return primaryDate;
+  } else {
+    // Primary date has passed and they haven't been injected. Find first available date on or after today in this cycle
+    const nextAvailable = availableDates.find(d => d >= today);
+    if (nextAvailable) {
+      return nextAvailable;
+    }
+    // If all available dates in this cycle have passed, default to the last available date in this cycle
+    return availableDates[availableDates.length - 1];
+  }
+}
+
+// Checks if a date matches the solved checklist date for a patient's cycle
+function isPatientChecklistDate(patient, date) {
+  const checklistDate = getPatientChecklistDate(patient, date);
+  if (!checklistDate) return false;
+  return formatDateString(checklistDate) === formatDateString(date);
+}
+
+// Calculates the active preferred date for a patient in the week of cellDate
+function getPatientActivePreferredDate(patient, cellDate) {
+  const checklistDate = getPatientChecklistDate(patient, cellDate);
+  return checklistDate || getStartOfWeek(cellDate);
 }
 
 // Render the monthly calendar grid using compact indicator person SVG icons
@@ -432,7 +503,7 @@ function renderMonthlyCalendar() {
     const cellDayName = WEEKDAYS[cellDayIndex];
 
     // Find patients active and scheduled for this weekday
-    const scheduledPatients = patients.filter(p => isPatientActiveOnDate(p, cellDate));
+    const scheduledPatients = patients.filter(p => isPatientScheduledAndActiveOnDate(p, cellDate));
 
     if (scheduledPatients.length > 0) {
       scheduledPatients.forEach(patient => {
@@ -515,8 +586,8 @@ function updateDashboardStats() {
   const todayDate = new Date();
   const currentSun = getStartOfWeek(todayDate);
 
-  // Due Today count: patients scheduled on today's weekday and within active treatment window and matching frequency
-  const dueToday = patients.filter(p => isPatientActiveOnDate(p, todayDate)).length;
+  // Due Today count: patients due today based on checklist shifting logic
+  const dueToday = patients.filter(p => isPatientChecklistDate(p, todayDate)).length;
   const dueTodayEl = document.getElementById("metric-due-today");
   if (dueTodayEl) dueTodayEl.textContent = dueToday;
 
@@ -562,8 +633,8 @@ function renderDailyAgenda(date) {
   titleEl.textContent = prettyDate;
   agendaSection.style.display = "block";
 
-  // Filter patients scheduled on this weekday, within active treatment window, and matching frequency
-  const scheduled = patients.filter(p => isPatientActiveOnDate(p, date));
+  // Filter patients whose checklist date matches this date
+  const scheduled = patients.filter(p => isPatientChecklistDate(p, date));
 
   if (scheduled.length === 0) {
     statsEl.textContent = "0 scheduled";
