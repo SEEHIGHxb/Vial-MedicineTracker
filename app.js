@@ -62,19 +62,35 @@ function seedDatabase() {
       if (patient.availableDays !== undefined) delete patient.availableDays;
       if (patient.usualTime !== undefined) delete patient.usualTime;
 
-      // 4. Ensure startDate and endDate exist for treatment window tracking
+      // 4. Ensure startDate exists for treatment window tracking
       if (!patient.startDate) {
         patient.startDate = "2026-05-01";
-        requiresMigration = true;
-      }
-      if (!patient.endDate) {
-        patient.endDate = "2026-12-31";
         requiresMigration = true;
       }
 
       // 5. Ensure frequency exists for treatment tracking
       if (!patient.frequency) {
         patient.frequency = 1;
+        requiresMigration = true;
+      }
+
+      // 6. Ensure doses exists (calculated from old endDate if present)
+      if (patient.doses === undefined) {
+        if (patient.startDate && patient.endDate) {
+          const start = new Date(patient.startDate);
+          const end = new Date(patient.endDate);
+          const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+          const diffWeeks = Math.round(diffDays / 7);
+          const freq = parseInt(patient.frequency) || 1;
+          const calculatedDoses = Math.round(diffWeeks / freq) + 1;
+          patient.doses = Math.max(1, Math.min(14, calculatedDoses || 10));
+        } else {
+          patient.doses = 10;
+        }
+        requiresMigration = true;
+      }
+      if (patient.endDate !== undefined) {
+        delete patient.endDate;
         requiresMigration = true;
       }
     });
@@ -100,7 +116,7 @@ function seedDatabase() {
         notes: "Patient prefers a slow injection. Monitor for mild site redness. Patient has a mild penicillin allergy",
         injectionLogs: ["2026-05-25"], // Completed on Monday of the current week (May 25, 2026)
         startDate: "2026-05-01",
-        endDate: "2026-12-31",
+        doses: 10,
         frequency: 1
       },
       {
@@ -115,7 +131,7 @@ function seedDatabase() {
         notes: "Check blood glucose levels prior to administration. Remind patient about weekly dietary guidelines",
         injectionLogs: [], // Pending for this week
         startDate: "2026-05-01",
-        endDate: "2026-12-31",
+        doses: 8,
         frequency: 1
       },
       {
@@ -131,7 +147,7 @@ function seedDatabase() {
         notes: "Administer with a high-gauge needle. Patient takes folic acid daily. Check blood count lab sheet monthly",
         injectionLogs: [], // Pending for this week
         startDate: "2026-05-01",
-        endDate: "2026-12-31",
+        doses: 12,
         frequency: 1
       },
       {
@@ -146,7 +162,7 @@ function seedDatabase() {
         notes: "Keep medication refrigerated until 30 minutes before injection. Patient self-injects occasionally under supervision",
         injectionLogs: ["2026-05-31"], // Completed today (Sunday May 31, 2026)
         startDate: "2026-05-01",
-        endDate: "2026-12-31",
+        doses: 6,
         frequency: 1
       }
     ];
@@ -232,6 +248,24 @@ function formatPrettyDate(date) {
   return `${day} ${month} ${year}`;
 }
 
+// Calculate the exact date of the last injection based on startDate, doses, frequency, and usualDay
+function calculateLastInjectionDate(patient) {
+  const start = patient.startDate || formatDateString(new Date());
+  const startSun = getStartOfWeek(start);
+  const freq = parseInt(patient.frequency) || 1;
+  const doses = parseInt(patient.doses) || 1;
+  const totalWeeks = (doses - 1) * freq;
+  
+  const lastSun = new Date(startSun);
+  lastSun.setDate(startSun.getDate() + totalWeeks * 7);
+  
+  // Add weekday offset of preferred day (default Monday if usualDay not set/found)
+  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const lastDate = new Date(lastSun);
+  lastDate.setDate(lastSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
+  return lastDate;
+}
+
 // 3. UI Core Renderers
 
 // Initialize Dashboard Overview Metrics
@@ -246,15 +280,24 @@ function updateDashboardStats() {
     const isScheduled = p.schedules[todayDayName] !== undefined;
     if (!isScheduled) return false;
     const start = p.startDate || "2000-01-01";
-    const end = p.endDate || "2099-12-31";
-    const withinDates = todayStr >= start && todayStr <= end;
+    const doses = parseInt(p.doses) || 1;
+    const freq = parseInt(p.frequency) || 1;
+
+    // Calculate dynamic end date (Saturday of the last dose week)
+    const startSun = getStartOfWeek(start);
+    const totalWeeks = (doses - 1) * freq;
+    const endSun = new Date(startSun);
+    endSun.setDate(startSun.getDate() + totalWeeks * 7);
+    const endWeekSaturday = new Date(endSun);
+    endWeekSaturday.setDate(endSun.getDate() + 6);
+    const endDateStr = formatDateString(endWeekSaturday);
+
+    const withinDates = todayStr >= start && todayStr <= endDateStr;
     if (!withinDates) return false;
 
     // Calculate frequency occurrence
-    const startSun = getStartOfWeek(start);
     const diffDays = Math.round((currentSun - startSun) / (1000 * 60 * 60 * 24));
     const diffWeeks = Math.round(diffDays / 7);
-    const freq = parseInt(p.frequency) || 1;
     return diffWeeks >= 0 && (diffWeeks % freq === 0);
   }).length;
   const dueTodayEl = document.getElementById("metric-due-today");
@@ -305,16 +348,25 @@ function renderDailyAgenda(date) {
     const isScheduled = p.schedules[weekdayName] !== undefined;
     if (!isScheduled) return false;
     const start = p.startDate || "2000-01-01";
-    const end = p.endDate || "2099-12-31";
-    const withinDates = dateStr >= start && dateStr <= end;
+    const doses = parseInt(p.doses) || 1;
+    const freq = parseInt(p.frequency) || 1;
+
+    // Calculate dynamic end date (Saturday of the last dose week)
+    const startSun = getStartOfWeek(start);
+    const totalWeeks = (doses - 1) * freq;
+    const endSun = new Date(startSun);
+    endSun.setDate(startSun.getDate() + totalWeeks * 7);
+    const endWeekSaturday = new Date(endSun);
+    endWeekSaturday.setDate(endSun.getDate() + 6);
+    const endDateStr = formatDateString(endWeekSaturday);
+
+    const withinDates = dateStr >= start && dateStr <= endDateStr;
     if (!withinDates) return false;
 
     // Calculate frequency occurrence
-    const startSun = getStartOfWeek(start);
     const selectedSun = getStartOfWeek(date);
     const diffDays = Math.round((selectedSun - startSun) / (1000 * 60 * 60 * 24));
     const diffWeeks = Math.round(diffDays / 7);
-    const freq = parseInt(p.frequency) || 1;
     return diffWeeks >= 0 && (diffWeeks % freq === 0);
   });
 
@@ -609,8 +661,12 @@ function openPatientDetails(patientId) {
         <div class="detail-grid-item-value">${patient.startDate ? formatPrettyDate(patient.startDate) : "Not set"}</div>
       </div>
       <div class="detail-grid-item">
-        <div class="detail-grid-item-label">Last Injection Date</div>
-        <div class="detail-grid-item-value">${patient.endDate ? formatPrettyDate(patient.endDate) : "Not set"}</div>
+        <div class="detail-grid-item-label">Dose Course</div>
+        <div class="detail-grid-item-value">${patient.doses || 10} Doses</div>
+      </div>
+      <div class="detail-grid-item">
+        <div class="detail-grid-item-label">Last Injection Date (Calculated)</div>
+        <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDate(patient))}</div>
       </div>
       <div class="detail-grid-item">
         <div class="detail-grid-item-label">Frequency</div>
@@ -684,11 +740,9 @@ function openAddPatientForm() {
 
   syncRoundsDropdownsState();
 
-  // Set default dates
+  // Set default dates and doses
   document.getElementById("p-start-date").value = formatDateString(new Date());
-  const oneYearLater = new Date();
-  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-  document.getElementById("p-end-date").value = formatDateString(oneYearLater);
+  document.getElementById("p-doses").value = "10";
   document.getElementById("p-frequency").value = "1";
 
   openModal("patient-modal-overlay");
@@ -706,7 +760,7 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-usual-round").value = patient.usualRound;
   document.getElementById("p-notes").value = patient.notes || "";
   document.getElementById("p-start-date").value = patient.startDate || "";
-  document.getElementById("p-end-date").value = patient.endDate || "";
+  document.getElementById("p-doses").value = String(patient.doses || 10);
   document.getElementById("p-frequency").value = String(patient.frequency || "1");
 
   // Set clinic availability checkboxes and round dropdown values
@@ -754,7 +808,7 @@ function handleFormSubmit(e) {
   const usualRound = parseInt(document.getElementById("p-usual-round").value);
   const notes = document.getElementById("p-notes").value;
   const startDate = document.getElementById("p-start-date").value;
-  const endDate = document.getElementById("p-end-date").value;
+  const doses = parseInt(document.getElementById("p-doses").value) || 10;
   const frequency = parseInt(document.getElementById("p-frequency").value) || 1;
 
   // Retrieve availability weekdays and custom sessions
@@ -779,14 +833,14 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, usualDay, usualRound, schedules, notes, startDate, endDate, frequency
+        name, usualDay, usualRound, schedules, notes, startDate, doses, frequency
       };
     }
   } else {
     // Create new profile
     const newPatient = {
       id: "pat_" + Date.now(),
-      name, usualDay, usualRound, schedules, notes, startDate, endDate, frequency,
+      name, usualDay, usualRound, schedules, notes, startDate, doses, frequency,
       injectionLogs: []
     };
     patients.push(newPatient);
