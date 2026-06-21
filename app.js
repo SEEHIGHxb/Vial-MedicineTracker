@@ -248,16 +248,39 @@ function formatPrettyDate(date) {
   return `${day} ${month} ${year}`;
 }
 
+// Returns the Sunday date of the first week containing a scheduled clinic day on or after the first injection date
+function getFirstActiveWeekSunday(patient) {
+  const start = patient.startDate || formatDateString(new Date());
+  const parts = start.split('-');
+  const startDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  
+  const scheduledDays = Object.keys(patient.schedules || {});
+  if (scheduledDays.length === 0) {
+    return getStartOfWeek(start);
+  }
+  
+  // Find the first day on or after startDate that is scheduled in the patient availability matrix
+  let current = new Date(startDate);
+  for (let i = 0; i < 7; i++) {
+    const dayName = WEEKDAYS[current.getDay()];
+    if (patient.schedules[dayName] !== undefined) {
+      return getStartOfWeek(current);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return getStartOfWeek(start);
+}
+
 // Calculate the exact date of the last injection based on startDate, doses, frequency, and usualDay
 function calculateLastInjectionDate(patient) {
-  const start = patient.startDate || formatDateString(new Date());
-  const startSun = getStartOfWeek(start);
+  const baseSun = getFirstActiveWeekSunday(patient);
   const freq = parseInt(patient.frequency) || 1;
   const doses = parseInt(patient.doses) || 1;
   const totalWeeks = (doses - 1) * freq;
   
-  const lastSun = new Date(startSun);
-  lastSun.setDate(startSun.getDate() + totalWeeks * 7);
+  const lastSun = new Date(baseSun);
+  lastSun.setDate(baseSun.getDate() + totalWeeks * 7);
   
   // Add weekday offset of preferred day (default Monday if usualDay not set/found)
   const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
@@ -284,10 +307,10 @@ function updateDashboardStats() {
     const freq = parseInt(p.frequency) || 1;
 
     // Calculate dynamic end date (Saturday of the last dose week)
-    const startSun = getStartOfWeek(start);
+    const baseSun = getFirstActiveWeekSunday(p);
     const totalWeeks = (doses - 1) * freq;
-    const endSun = new Date(startSun);
-    endSun.setDate(startSun.getDate() + totalWeeks * 7);
+    const endSun = new Date(baseSun);
+    endSun.setDate(baseSun.getDate() + totalWeeks * 7);
     const endWeekSaturday = new Date(endSun);
     endWeekSaturday.setDate(endSun.getDate() + 6);
     const endDateStr = formatDateString(endWeekSaturday);
@@ -296,7 +319,7 @@ function updateDashboardStats() {
     if (!withinDates) return false;
 
     // Calculate frequency occurrence
-    const diffDays = Math.round((currentSun - startSun) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((currentSun - baseSun) / (1000 * 60 * 60 * 24));
     const diffWeeks = Math.round(diffDays / 7);
     return diffWeeks >= 0 && (diffWeeks % freq === 0);
   }).length;
@@ -352,10 +375,10 @@ function renderDailyAgenda(date) {
     const freq = parseInt(p.frequency) || 1;
 
     // Calculate dynamic end date (Saturday of the last dose week)
-    const startSun = getStartOfWeek(start);
+    const baseSun = getFirstActiveWeekSunday(p);
     const totalWeeks = (doses - 1) * freq;
-    const endSun = new Date(startSun);
-    endSun.setDate(startSun.getDate() + totalWeeks * 7);
+    const endSun = new Date(baseSun);
+    endSun.setDate(baseSun.getDate() + totalWeeks * 7);
     const endWeekSaturday = new Date(endSun);
     endWeekSaturday.setDate(endSun.getDate() + 6);
     const endDateStr = formatDateString(endWeekSaturday);
@@ -365,7 +388,7 @@ function renderDailyAgenda(date) {
 
     // Calculate frequency occurrence
     const selectedSun = getStartOfWeek(date);
-    const diffDays = Math.round((selectedSun - startSun) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((selectedSun - baseSun) / (1000 * 60 * 60 * 24));
     const diffWeeks = Math.round(diffDays / 7);
     return diffWeeks >= 0 && (diffWeeks % freq === 0);
   });
