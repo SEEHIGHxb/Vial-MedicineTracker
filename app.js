@@ -1802,6 +1802,13 @@ function exportToPDF(headers, rows) {
     return;
   }
   
+  // Format current date as DD/MM/YYYY
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const formattedDate = `${day}/${month}/${year}`;
+  
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1821,6 +1828,12 @@ function exportToPDF(headers, rows) {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       color: #1d1d1f;
       padding: 20mm;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 20px 0;
+      color: #1d1d1f;
     }
     table {
       width: 100%;
@@ -1844,6 +1857,12 @@ function exportToPDF(headers, rows) {
     tr:last-child td {
       border-bottom: 2px solid #d2d2d7;
     }
+    .report-footer {
+      text-align: right;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #86868b;
+    }
     * {
       user-select: text !important;
       -webkit-user-select: text !important;
@@ -1851,6 +1870,8 @@ function exportToPDF(headers, rows) {
   </style>
 </head>
 <body>
+  <h1>Clinical Patient Summary Report</h1>
+
   <table>
     <thead>
       <tr>
@@ -1865,6 +1886,10 @@ function exportToPDF(headers, rows) {
       `).join('')}
     </tbody>
   </table>
+  
+  <div class="report-footer">
+    Report Generated: ${formattedDate}
+  </div>
   
   <script>
     window.onload = function() {
