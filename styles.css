@@ -311,6 +311,7 @@ button:active, .weekday-chip:active, .filter-chip:active {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  text-decoration: none;
 }
 
 .button-store-hero:hover {

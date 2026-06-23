@@ -1500,16 +1500,30 @@ function loadSettingsConfig() {
         link.click();
         document.body.removeChild(link);
       } else if (format === "xlsx") {
-        const xmlContent = generateExcelXML(headers, rows);
-        const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", "patient_clinical_summary.xlsx");
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        if (typeof XLSX === "undefined") {
+          alert("Excel export library is loading. Please try again in a moment.");
+          return;
+        }
+        
+        const sheetData = [headers, ...rows];
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+        
+        // Auto-fit column widths
+        const colWidths = headers.map((h, i) => {
+          let maxLen = h.length;
+          rows.forEach(r => {
+            const cellVal = String(r[i] || '');
+            if (cellVal.length > maxLen) {
+              maxLen = cellVal.length;
+            }
+          });
+          return { wch: maxLen + 4 };
+        });
+        worksheet['!cols'] = colWidths;
+        
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Patient Summary");
+        XLSX.writeFile(workbook, "patient_clinical_summary.xlsx");
       } else if (format === "pdf") {
         exportToPDF(headers, rows);
       }
@@ -1779,45 +1793,7 @@ function escapeXML(str) {
   });
 }
 
-function generateExcelXML(headers, rows) {
-  let xml = `<?xml version="1.0" encoding="utf-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <Styles>
-  <Style ss:ID="Header">
-   <Font ss:Bold="1"/>
-   <Interior ss:Color="#E4E4E4" ss:Pattern="Solid"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Patient Summary">
-  <Table>`;
-  
-  // Headers
-  xml += '\n   <Row ss:Height="22">';
-  headers.forEach(h => {
-    xml += `\n    <Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXML(h)}</Data></Cell>`;
-  });
-  xml += '\n   </Row>';
-  
-  // Rows
-  rows.forEach(r => {
-    xml += '\n   <Row>';
-    r.forEach((val, idx) => {
-      const type = (idx >= 3) ? 'Number' : 'String';
-      xml += `\n    <Cell><Data ss:Type="${type}">${escapeXML(String(val))}</Data></Cell>`;
-    });
-    xml += '\n   </Row>';
-  });
-  
-  xml += `\n  </Table>
- </Worksheet>
-</Workbook>`;
-  return xml;
-}
+
 
 function exportToPDF(headers, rows) {
   const printWindow = window.open('', '_blank', 'width=800,height=600');
