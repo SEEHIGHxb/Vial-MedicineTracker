@@ -1279,7 +1279,8 @@ input:checked + .switch-slider:before {
   padding: var(--spacing-lg) var(--spacing-xl);
   border-top: 1px solid var(--color-divider-soft);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
   align-items: center;
   background-color: var(--color-canvas);
   flex-shrink: 0;

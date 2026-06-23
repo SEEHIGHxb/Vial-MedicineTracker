@@ -102,6 +102,7 @@
 
 
         <div class="action-buttons-group" style="margin-bottom: var(--spacing-lg);">
+          <a href="#calendar-section" class="button-store-hero" style="padding: 10px 22px;">See Calendar</a>
           <a href="#database-section" class="button-secondary-pill">Search Database</a>
         </div>
 
@@ -136,9 +137,15 @@
     <!-- 4. Section 2: Calendar & Injection Log (Parchment Canvas) -->
     <section class="product-tile-parchment" id="calendar-section">
       <div class="tile-content calendar-tile-content">
-        <p class="tagline">Treatment Calendar</p>
-        <h2 class="display-lg">Monthly Schedule</h2>
-        <p class="lead">Select patient schedules and record administered weekly doses instantly</p>
+        <div class="calendar-page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); width: 100%;">
+          <h2 class="display-lg">Calendar</h2>
+          <a href="#overview-section" class="button-secondary-pill" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to main page
+          </a>
+        </div>
         
         <!-- Weekly Grid Layout -->
         <div class="calendar-wrapper">
@@ -291,7 +298,31 @@
             </div>
           </div>
 
-          <!-- 3. Database Operations Card -->
+          <!-- 3. Data Export Card -->
+          <div class="store-utility-card data-export-card">
+            <div class="settings-card-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <h3>Data Export</h3>
+            </div>
+            <p class="settings-card-desc">Download a complete clinical summary report of all patients, frequencies, start dates, and remaining doses</p>
+            
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm); gap: 12px; grid-template-columns: 1fr auto;">
+              <div class="input-group" style="margin-bottom: 0;">
+                <select id="export-format-select" class="form-select-pill">
+                  <option value="csv">CSV Spreadsheet (.csv)</option>
+                  <option value="xlsx">Excel Workbook (.xlsx)</option>
+                  <option value="pdf">PDF Document (.pdf)</option>
+                </select>
+              </div>
+              <button class="button-primary" id="export-data-btn" style="height: 44px; padding: 0 24px;">Export</button>
+            </div>
+          </div>
+
+          <!-- 4. Database Operations Card -->
           <div class="store-utility-card database-operations-card">
             <div class="settings-card-header">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="settings-icon" style="color: var(--color-danger);">
@@ -542,8 +573,8 @@
       </div>
       
       <div class="detail-sheet-footer">
-        <button class="button-pearl-capsule" id="edit-detail-btn">Edit Details</button>
-        <button class="button-store-hero" id="close-detail-bottom-btn">Close</button>
+        <button class="button-pearl-capsule" id="close-detail-bottom-btn">Close</button>
+        <button class="button-store-hero" id="edit-detail-btn">Edit Details</button>
       </div>
     </div>
   </div>

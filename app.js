@@ -1456,6 +1456,65 @@ function loadSettingsConfig() {
       }
     });
   }
+
+  // Bind Export Data button click listener
+  const exportBtn = document.getElementById("export-data-btn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const formatSelect = document.getElementById("export-format-select");
+      if (!formatSelect) return;
+      const format = formatSelect.value;
+      
+      if (!patients || patients.length === 0) {
+        alert("No patient data available to export.");
+        return;
+      }
+      
+      const headers = ["Name", "Frequency", "First injection", "Injected Doses", "Remaining Dose"];
+      const rows = patients.map(p => {
+        let freqLabel = "Once per week";
+        if (p.frequency == 2) freqLabel = "Once per 2 weeks";
+        if (p.frequency == 4) freqLabel = "Once per 4 weeks";
+        
+        const injected = p.injectionLogs ? p.injectionLogs.length : 0;
+        const remaining = Math.max(0, (p.doses || 10) - injected);
+        
+        return [
+          p.name,
+          freqLabel,
+          p.startDate || '',
+          injected,
+          remaining
+        ];
+      });
+
+      if (format === "csv") {
+        const csvContent = "\uFEFF" + [headers.join(",")].concat(rows.map(r => r.map(escapeCSV).join(","))).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "patient_clinical_summary.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (format === "xlsx") {
+        const xmlContent = generateExcelXML(headers, rows);
+        const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "patient_clinical_summary.xlsx");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (format === "pdf") {
+        exportToPDF(headers, rows);
+      }
+    });
+  }
 }
 
 // 8. Application Initializer on DOM Load
@@ -1601,8 +1660,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Smooth local navigation links highlighting
   window.addEventListener("scroll", () => {
+    const hash = window.location.hash;
+    if (hash === "#calendar-section" || hash === "#calendar-page") return;
+
     const scrollPos = window.scrollY + 100;
-    const sections = ["overview-section", "calendar-section", "database-section", "settings-section"];
+    const sections = ["overview-section", "database-section", "settings-section"];
     
     sections.forEach(secId => {
       const el = document.getElementById(secId);
@@ -1621,6 +1683,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Handle SPA routing on load and hash change
+  handleRouting();
+  window.addEventListener("hashchange", handleRouting);
+
   // PWA Service Worker Registration
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1630,3 +1696,240 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// SPA Hash routing logic
+function handleRouting() {
+  const hash = window.location.hash;
+  const isCalendar = (hash === "#calendar-section" || hash === "#calendar-page");
+
+  const overviewSec = document.getElementById("overview-section");
+  const calendarSec = document.getElementById("calendar-section");
+  const databaseSec = document.getElementById("database-section");
+  const settingsSec = document.getElementById("settings-section");
+  const subNav = document.getElementById("sub-nav");
+
+  if (isCalendar) {
+    if (overviewSec) overviewSec.style.display = "none";
+    if (databaseSec) databaseSec.style.display = "none";
+    if (settingsSec) settingsSec.style.display = "none";
+    if (subNav) subNav.style.display = "none";
+    if (calendarSec) calendarSec.style.display = "block";
+
+    // Update active highlight classes on links
+    document.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.remove("active");
+      if (item.getAttribute("href") === "#calendar-section") {
+        item.classList.add("active");
+      }
+    });
+    document.querySelectorAll(".drawer-item").forEach(item => {
+      item.classList.remove("active");
+      if (item.getAttribute("href") === "#calendar-section") {
+        item.classList.add("active");
+      }
+    });
+    
+    window.scrollTo(0, 0);
+  } else {
+    // Show main sections
+    if (overviewSec) overviewSec.style.display = "";
+    if (databaseSec) databaseSec.style.display = "";
+    if (settingsSec) settingsSec.style.display = "";
+    if (subNav) subNav.style.display = "";
+    if (calendarSec) calendarSec.style.display = "none";
+
+    // Set correct active highlight on links based on current hash
+    const currentHash = hash || "#overview-section";
+    document.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.remove("active");
+      if (item.getAttribute("href") === currentHash) {
+        item.classList.add("active");
+      }
+    });
+    document.querySelectorAll(".drawer-item").forEach(item => {
+      item.classList.remove("active");
+      if (item.getAttribute("href") === currentHash) {
+        item.classList.add("active");
+      }
+    });
+  }
+}
+
+// Export Format Helpers
+function escapeCSV(val) {
+  if (val === null || val === undefined) return '';
+  let str = String(val);
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    str = '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function escapeXML(str) {
+  if (!str) return '';
+  return str.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+function generateExcelXML(headers, rows) {
+  let xml = `<?xml version="1.0" encoding="utf-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1"/>
+   <Interior ss:Color="#E4E4E4" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Patient Summary">
+  <Table>`;
+  
+  // Headers
+  xml += '\n   <Row ss:Height="22">';
+  headers.forEach(h => {
+    xml += `\n    <Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXML(h)}</Data></Cell>`;
+  });
+  xml += '\n   </Row>';
+  
+  // Rows
+  rows.forEach(r => {
+    xml += '\n   <Row>';
+    r.forEach((val, idx) => {
+      const type = (idx >= 3) ? 'Number' : 'String';
+      xml += `\n    <Cell><Data ss:Type="${type}">${escapeXML(String(val))}</Data></Cell>`;
+    });
+    xml += '\n   </Row>';
+  });
+  
+  xml += `\n  </Table>
+ </Worksheet>
+</Workbook>`;
+  return xml;
+}
+
+function exportToPDF(headers, rows) {
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) {
+    alert("Popup blocker prevented exporting to PDF. Please allow popups for this site.");
+    return;
+  }
+  
+  let html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Clinical Patient Summary Report</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1d1d1f;
+      padding: 40px;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #1d1d1f;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .date {
+      font-size: 14px;
+      color: #68686d;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th {
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid #d2d2d7;
+      font-size: 14px;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e5ea;
+      font-size: 14px;
+    }
+    tr:last-child td {
+      border-bottom: 2px solid #d2d2d7;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #86868b;
+      text-align: center;
+    }
+    @media print {
+      body {
+        padding: 20px 0;
+      }
+      @page {
+        size: letter;
+        margin: 20mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1 class="title">Clinical Patient Summary Report</h1>
+      <div style="font-size: 12px; color: #86868b; margin-top: 4px;">Vial Medicine Injection Tracker</div>
+    </div>
+    <div class="date">Report Generated: ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        ${headers.map(h => `<th>${escapeXML(h)}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map(r => `
+        <tr>
+          ${r.map(val => `<td>${escapeXML(String(val))}</td>`).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  
+  <div class="footer">
+    <p>Confidential Medical Document - Generated via Vial Application Sandbox</p>
+    <p>100% Local Browser Database Storage - HIPAA Compliant Sandbox Environment</p>
+  </div>
+  
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+}
