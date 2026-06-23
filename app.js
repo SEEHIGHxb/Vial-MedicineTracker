@@ -1482,7 +1482,7 @@ function loadSettingsConfig() {
         return [
           p.name,
           freqLabel,
-          p.startDate || '',
+          formatDateDMY(p.startDate),
           injected,
           remaining
         ];
@@ -1805,35 +1805,27 @@ function exportToPDF(headers, rows) {
   let html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>Clinical Patient Summary Report</title>
+  <title>Patient Summary Report</title>
   <style>
+    @page {
+      margin: 0;
+      size: letter;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       color: #1d1d1f;
-      padding: 40px;
-      margin: 0;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #1d1d1f;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-    .title {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 600;
-    }
-    .date {
-      font-size: 14px;
-      color: #68686d;
+      padding: 20mm;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
     }
     th {
       background-color: #f5f5f7;
@@ -1852,32 +1844,13 @@ function exportToPDF(headers, rows) {
     tr:last-child td {
       border-bottom: 2px solid #d2d2d7;
     }
-    .footer {
-      margin-top: 40px;
-      font-size: 12px;
-      color: #86868b;
-      text-align: center;
-    }
-    @media print {
-      body {
-        padding: 20px 0;
-      }
-      @page {
-        size: letter;
-        margin: 20mm;
-      }
+    * {
+      user-select: text !important;
+      -webkit-user-select: text !important;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <h1 class="title">Clinical Patient Summary Report</h1>
-      <div style="font-size: 12px; color: #86868b; margin-top: 4px;">Vial Medicine Injection Tracker</div>
-    </div>
-    <div class="date">Report Generated: ${new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-  </div>
-  
   <table>
     <thead>
       <tr>
@@ -1893,11 +1866,6 @@ function exportToPDF(headers, rows) {
     </tbody>
   </table>
   
-  <div class="footer">
-    <p>Confidential Medical Document - Generated via Vial Application Sandbox</p>
-    <p>100% Local Browser Database Storage - HIPAA Compliant Sandbox Environment</p>
-  </div>
-  
   <script>
     window.onload = function() {
       window.print();
@@ -1908,4 +1876,13 @@ function exportToPDF(headers, rows) {
   
   printWindow.document.write(html);
   printWindow.document.close();
+}
+
+function formatDateDMY(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
 }
