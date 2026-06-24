@@ -101,7 +101,18 @@ function seedDatabase() {
         patient.secondaryDoses = 10;
         patient.secondaryFrequency = 1;
         patient.secondaryInjectionLogs = [];
+        patient.secondaryUsualDay = patient.usualDay || "Mon";
+        patient.secondaryUsualRound = patient.usualRound || 1;
         requiresMigration = true;
+      } else {
+        if (patient.secondaryUsualDay === undefined) {
+          patient.secondaryUsualDay = patient.usualDay || "Mon";
+          requiresMigration = true;
+        }
+        if (patient.secondaryUsualRound === undefined) {
+          patient.secondaryUsualRound = patient.usualRound || 1;
+          requiresMigration = true;
+        }
       }
     });
 
@@ -466,7 +477,7 @@ function calculateLastInjectionDateSecondary(patient) {
   const lastSun = new Date(baseSun);
   lastSun.setDate(baseSun.getDate() + totalWeeks * 7);
   
-  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const dayIndex = WEEKDAYS.indexOf(patient.secondaryUsualDay || patient.usualDay || "Mon");
   const lastDate = new Date(lastSun);
   lastDate.setDate(lastSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
   return lastDate;
@@ -567,7 +578,7 @@ function getPatientSecondaryChecklistDate(patient, referenceDate) {
 
   if (availableDates.length === 0) return null;
 
-  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const dayIndex = WEEKDAYS.indexOf(patient.secondaryUsualDay || patient.usualDay || "Mon");
   const primaryDate = new Date(cycleStartSun);
   primaryDate.setDate(cycleStartSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
   primaryDate.setHours(0, 0, 0, 0);
@@ -1330,6 +1341,10 @@ function openPatientDetails(patientId) {
       <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xs);">Secondary Treatment Details</h3>
       <div class="detail-grid-section secondary-treatment-box" style="margin-bottom: var(--spacing-sm); border: 1.5px dashed rgba(212, 160, 23, 0.25);">
         <div class="detail-grid-item" style="grid-column: span 2;">
+          <div class="detail-grid-item-label" style="color: #b8860b;">Schedule Day</div>
+          <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.secondaryUsualDay || patient.usualDay || "Mon"]} : Session ${patient.secondaryUsualRound || 1}</div>
+        </div>
+        <div class="detail-grid-item" style="grid-column: span 2;">
           <div class="detail-grid-item-label" style="color: #b8860b;">First Injection Date</div>
           <div class="detail-grid-item-value">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
         </div>
@@ -1453,6 +1468,8 @@ function initializeFormSecondaryToggle() {
       document.getElementById("p-sec-start-date").value = "";
       document.getElementById("p-sec-doses").value = "10";
       document.getElementById("p-sec-frequency").value = "1";
+      document.getElementById("p-sec-usual-day").value = "Mon";
+      document.getElementById("p-sec-usual-round").value = "1";
     } else {
       secondarySection.style.display = "block";
       toggleBtn.textContent = "Remove Secondary Treatment";
@@ -1492,6 +1509,10 @@ function openAddPatientForm() {
   if (secDoses) secDoses.value = "10";
   const secFreq = document.getElementById("p-sec-frequency");
   if (secFreq) secFreq.value = "1";
+  const secUsualDay = document.getElementById("p-sec-usual-day");
+  if (secUsualDay) secUsualDay.value = "Mon";
+  const secUsualRound = document.getElementById("p-sec-usual-round");
+  if (secUsualRound) secUsualRound.value = "1";
 
   openModal("patient-modal-overlay");
 }
@@ -1524,6 +1545,10 @@ function openEditPatientForm(patientId) {
     if (secDoses) secDoses.value = String(patient.secondaryDoses || 10);
     const secFreq = document.getElementById("p-sec-frequency");
     if (secFreq) secFreq.value = String(patient.secondaryFrequency || "1");
+    const secUsualDay = document.getElementById("p-sec-usual-day");
+    if (secUsualDay) secUsualDay.value = patient.secondaryUsualDay || patient.usualDay || "Mon";
+    const secUsualRound = document.getElementById("p-sec-usual-round");
+    if (secUsualRound) secUsualRound.value = String(patient.secondaryUsualRound || 1);
   } else {
     if (secondarySection) secondarySection.style.display = "none";
     if (toggleBtn) toggleBtn.textContent = "Create Secondary Treatment";
@@ -1534,6 +1559,10 @@ function openEditPatientForm(patientId) {
     if (secDoses) secDoses.value = "10";
     const secFreq = document.getElementById("p-sec-frequency");
     if (secFreq) secFreq.value = "1";
+    const secUsualDay = document.getElementById("p-sec-usual-day");
+    if (secUsualDay) secUsualDay.value = "Mon";
+    const secUsualRound = document.getElementById("p-sec-usual-round");
+    if (secUsualRound) secUsualRound.value = "1";
   }
 
   // Set clinic availability checkboxes and round dropdown values
@@ -1590,6 +1619,8 @@ function handleFormSubmit(e) {
   const secondaryStartDate = document.getElementById("p-sec-start-date").value;
   const secondaryDoses = parseInt(document.getElementById("p-sec-doses").value) || 10;
   const secondaryFrequency = parseInt(document.getElementById("p-sec-frequency").value) || 1;
+  const secondaryUsualDay = document.getElementById("p-sec-usual-day").value;
+  const secondaryUsualRound = parseInt(document.getElementById("p-sec-usual-round").value);
 
   // Retrieve availability weekdays and custom sessions
   const schedules = {};
@@ -1607,6 +1638,11 @@ function handleFormSubmit(e) {
     schedules[usualDay] = usualRound;
   }
 
+  // Guarantee that the Preferred Secondary Usual day is also present in schedules
+  if (hasSecondary && schedules[secondaryUsualDay] === undefined) {
+    schedules[secondaryUsualDay] = secondaryUsualRound;
+  }
+
   if (id) {
     // Update existing profile
     const idx = patients.findIndex(p => p.id === id);
@@ -1615,6 +1651,7 @@ function handleFormSubmit(e) {
         ...patients[idx],
         name, usualDay, usualRound, schedules, notes, startDate, doses, frequency,
         hasSecondary, secondaryStartDate, secondaryDoses, secondaryFrequency,
+        secondaryUsualDay, secondaryUsualRound,
         secondaryInjectionLogs: patients[idx].secondaryInjectionLogs || []
       };
     }
@@ -1625,6 +1662,7 @@ function handleFormSubmit(e) {
       name, usualDay, usualRound, schedules, notes, startDate, doses, frequency,
       injectionLogs: [],
       hasSecondary, secondaryStartDate, secondaryDoses, secondaryFrequency,
+      secondaryUsualDay, secondaryUsualRound,
       secondaryInjectionLogs: []
     };
     patients.push(newPatient);

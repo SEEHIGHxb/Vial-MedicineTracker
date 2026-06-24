@@ -568,13 +568,40 @@
                 </select>
               </div>
             </div>
-            <div class="input-group" style="margin-top: var(--spacing-sm); margin-bottom: 0;">
+            <div class="input-group" style="margin-top: var(--spacing-sm);">
               <label for="p-sec-frequency">Frequency</label>
               <select id="p-sec-frequency" class="form-select-pill">
                 <option value="1">Once per week</option>
                 <option value="2">Once per 2 weeks</option>
                 <option value="4">Once per 4 weeks</option>
               </select>
+            </div>
+
+            <!-- Dashed separator -->
+            <div class="form-box-divider" style="border-top-color: rgba(212, 160, 23, 0.25);"></div>
+
+            <h4 class="box-title">Secondary Preferred Schedule</h4>
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="p-sec-usual-day">Preferred Injection Day</label>
+                <select id="p-sec-usual-day" class="form-select-pill">
+                  <option value="Sun">Sunday</option>
+                  <option value="Mon" selected>Monday</option>
+                  <option value="Tue">Tuesday</option>
+                  <option value="Wed">Wednesday</option>
+                  <option value="Thu">Thursday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                </select>
+              </div>
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="p-sec-usual-round">Preferred Session</label>
+                <select id="p-sec-usual-round" class="form-select-pill">
+                  <option value="1" selected>Session 1</option>
+                  <option value="2">Session 2</option>
+                  <option value="3">Session 3</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
