@@ -1301,9 +1301,9 @@ function openPatientDetails(patientId) {
     let nextSecHtml = "";
     if (nextSecDate) {
       nextSecHtml = `
-        <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs); background-color: rgba(212, 160, 23, 0.05); border-color: rgba(212, 160, 23, 0.2); color: #b8860b;">
-          <span class="history-item-date">${formatPrettyDate(nextSecDate)}</span>
-          <span class="history-item-badge" style="background-color: #ff9500; color: white;">Next Injection</span>
+        <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs); background-color: var(--color-surface-pearl); border-color: var(--color-hairline); color: var(--color-ink-muted-48);">
+          <span class="history-item-date" style="color: var(--color-ink-muted-48);">${formatPrettyDate(nextSecDate)}</span>
+          <span class="history-item-badge" style="color: var(--color-ink-muted-48);">Next Injection</span>
         </div>
       `;
     }
@@ -1317,9 +1317,9 @@ function openPatientDetails(patientId) {
           ${nextSecHtml}
           ${sortedSecLogs.map(logDate => {
             return `
-              <div class="history-item" style="border-left-color: #ff9500;">
-                <span class="history-item-date">${formatPrettyDate(logDate)}</span>
-                <span class="history-item-badge" style="background-color: rgba(212, 160, 23, 0.1); color: #b8860b; border: 1px solid rgba(212, 160, 23, 0.2);">Secondary Injected</span>
+              <div class="history-item" style="background-color: var(--color-surface-pearl); border-color: var(--color-hairline); color: var(--color-ink-muted-48);">
+                <span class="history-item-date" style="color: var(--color-ink-muted-48);">${formatPrettyDate(logDate)}</span>
+                <span class="history-item-badge" style="color: var(--color-ink-muted-48);">Injected</span>
               </div>
             `;
           }).join("")}
@@ -1338,31 +1338,34 @@ function openPatientDetails(patientId) {
     if (patient.secondaryFrequency == 4) secFreqLabel = "Once per 4 weeks";
 
     secondaryDetailsHtml = `
-      <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xs);">Secondary Treatment Details</h3>
-      <div class="detail-grid-section secondary-treatment-box" style="margin-bottom: var(--spacing-sm); border: 1.5px dashed rgba(212, 160, 23, 0.25);">
+      <!-- Grey dashed line separator -->
+      <div class="form-box-divider" style="border-top: 1.5px dashed rgba(0, 0, 0, 0.12); margin: var(--spacing-lg) 0;"></div>
+
+      <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-top: 0; margin-bottom: var(--spacing-xs);">Secondary Treatment Details</h3>
+      <div class="detail-grid-section" style="margin-top: var(--spacing-xs); margin-bottom: var(--spacing-sm);">
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: #b8860b;">Schedule Day</div>
-          <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.secondaryUsualDay || patient.usualDay || "Mon"]} : Session ${patient.secondaryUsualRound || 1}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Schedule Day</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${WEEKDAYS_FULL[patient.secondaryUsualDay || patient.usualDay || "Mon"]} : Session ${patient.secondaryUsualRound || 1}</div>
         </div>
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: #b8860b;">First Injection Date</div>
-          <div class="detail-grid-item-value">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">First Injection Date</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
         </div>
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: #b8860b;">Last Injection Date (Calculated)</div>
-          <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDateSecondary(patient))}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Last Injection Date (Estimated)</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${formatPrettyDate(calculateLastInjectionDateSecondary(patient))}</div>
         </div>
         <div class="detail-grid-item">
-          <div class="detail-grid-item-label" style="color: #b8860b;">Dose Course</div>
-          <div class="detail-grid-item-value">${patient.secondaryDoses || 10} Doses</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Dose Course</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${patient.secondaryDoses || 10} Doses</div>
         </div>
         <div class="detail-grid-item">
-          <div class="detail-grid-item-label" style="color: #b8860b;">Frequency</div>
-          <div class="detail-grid-item-value">${secFreqLabel}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Frequency</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${secFreqLabel}</div>
         </div>
       </div>
 
-      <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Secondary Injection Log</h3>
+      <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Secondary Injection Log</h3>
       ${secLogsListHtml}
     `;
   }
@@ -1374,10 +1377,13 @@ function openPatientDetails(patientId) {
       </div>
       <div class="detail-main-info">
         <h2>${patient.name}</h2>
+        ${patient.notes ? `<p style="font-size: 13px; line-height: 1.4; color: var(--color-ink-muted-48); margin-top: 4px; white-space: pre-wrap;"><strong>Note:</strong> ${patient.notes}</p>` : ""}
       </div>
     </div>
 
-    <div class="detail-grid-section" style="margin-top: var(--spacing-lg);">
+    <!-- Main Treatment Details Heading in Blue -->
+    <h3 style="font-size: 14px; font-weight: 600; color: #0066cc; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xs);">Main Treatment Details</h3>
+    <div class="detail-grid-section" style="margin-top: var(--spacing-xs);">
       <div class="detail-grid-item" style="grid-column: span 2;">
         <div class="detail-grid-item-label">Schedule Day</div>
         <div class="detail-grid-item-value">${WEEKDAYS_FULL[patient.usualDay]} : Session ${patient.usualRound}</div>
@@ -1387,7 +1393,7 @@ function openPatientDetails(patientId) {
         <div class="detail-grid-item-value">${patient.startDate ? formatPrettyDate(patient.startDate) : "Not set"}</div>
       </div>
       <div class="detail-grid-item" style="grid-column: span 2;">
-        <div class="detail-grid-item-label">Last Injection Date (Calculated)</div>
+        <div class="detail-grid-item-label">Last Injection Date (Estimated)</div>
         <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDate(patient))}</div>
       </div>
       <div class="detail-grid-item">
@@ -1398,11 +1404,6 @@ function openPatientDetails(patientId) {
         <div class="detail-grid-item-label">Frequency</div>
         <div class="detail-grid-item-value">${frequencyLabel}</div>
       </div>
-    </div>
-
-    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs);">Notes</h3>
-    <div class="detail-notes-box">
-      ${patient.notes ? `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes}</p>` : `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink-muted-48); font-style: italic;">No Note</p>`}
     </div>
 
     <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Main Injection Log</h3>
