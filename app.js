@@ -93,6 +93,16 @@ function seedDatabase() {
         delete patient.endDate;
         requiresMigration = true;
       }
+
+      // 7. Ensure secondary treatment fields are initialized
+      if (patient.hasSecondary === undefined) {
+        patient.hasSecondary = false;
+        patient.secondaryStartDate = "";
+        patient.secondaryDoses = 10;
+        patient.secondaryFrequency = 1;
+        patient.secondaryInjectionLogs = [];
+        requiresMigration = true;
+      }
     });
 
     if (requiresMigration) {
@@ -421,6 +431,174 @@ function getPatientActivePreferredDate(patient, cellDate) {
   return checklistDate || getStartOfWeek(cellDate);
 }
 
+// Secondary Treatment Scheduling Helpers
+function getFirstActiveWeekSundaySecondary(patient) {
+  if (!patient.hasSecondary) return null;
+  const start = patient.secondaryStartDate || formatDateString(new Date());
+  const parts = start.split('-');
+  const startDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  
+  const scheduledDays = Object.keys(patient.schedules || {});
+  if (scheduledDays.length === 0) {
+    return getStartOfWeek(start);
+  }
+  
+  let current = new Date(startDate);
+  for (let i = 0; i < 7; i++) {
+    const dayName = WEEKDAYS[current.getDay()];
+    if (patient.schedules[dayName] !== undefined) {
+      return getStartOfWeek(current);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return getStartOfWeek(start);
+}
+
+function calculateLastInjectionDateSecondary(patient) {
+  if (!patient.hasSecondary) return null;
+  const baseSun = getFirstActiveWeekSundaySecondary(patient);
+  if (!baseSun) return null;
+  const freq = parseInt(patient.secondaryFrequency) || 1;
+  const doses = parseInt(patient.secondaryDoses) || 1;
+  const totalWeeks = (doses - 1) * freq;
+  
+  const lastSun = new Date(baseSun);
+  lastSun.setDate(baseSun.getDate() + totalWeeks * 7);
+  
+  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const lastDate = new Date(lastSun);
+  lastDate.setDate(lastSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
+  return lastDate;
+}
+
+function isPatientScheduledAndActiveOnDateSecondary(patient, date) {
+  if (!patient.hasSecondary) return false;
+  const weekdayName = WEEKDAYS[date.getDay()];
+  const isScheduled = patient.schedules[weekdayName] !== undefined;
+  if (!isScheduled) return false;
+
+  const dateStr = formatDateString(date);
+  const start = patient.secondaryStartDate || "2000-01-01";
+  const doses = parseInt(patient.secondaryDoses) || 10;
+  const freq = parseInt(patient.secondaryFrequency) || 1;
+
+  const baseSun = getFirstActiveWeekSundaySecondary(patient);
+  if (!baseSun) return false;
+  const totalWeeks = (doses - 1) * freq;
+  const endSun = new Date(baseSun);
+  endSun.setDate(baseSun.getDate() + totalWeeks * 7);
+  const endWeekSaturday = new Date(endSun);
+  endWeekSaturday.setDate(endSun.getDate() + 6);
+  const endDateStr = formatDateString(endWeekSaturday);
+
+  const withinDates = dateStr >= start && dateStr <= endDateStr;
+  if (!withinDates) return false;
+
+  const cellSun = getStartOfWeek(date);
+  const diffDays = Math.round((cellSun - baseSun) / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.round(diffDays / 7);
+  return diffWeeks >= 0 && (diffWeeks % freq === 0);
+}
+
+function getPatientSecondaryChecklistDate(patient, referenceDate) {
+  if (!patient.hasSecondary) return null;
+  const baseSun = getFirstActiveWeekSundaySecondary(patient);
+  if (!baseSun) return null;
+  const refSun = getStartOfWeek(referenceDate);
+  const diffDays = Math.round((refSun - baseSun) / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.round(diffDays / 7);
+
+  if (diffWeeks < 0) return null;
+
+  const freq = parseInt(patient.secondaryFrequency) || 1;
+  const cycleIndex = Math.floor(diffWeeks / freq);
+  
+  const cycleStartSun = new Date(baseSun);
+  cycleStartSun.setDate(baseSun.getDate() + cycleIndex * freq * 7);
+  cycleStartSun.setHours(0, 0, 0, 0);
+
+  const cycleEndSat = new Date(cycleStartSun);
+  cycleEndSat.setDate(cycleStartSun.getDate() + freq * 7 - 1);
+  cycleEndSat.setHours(23, 59, 59, 999);
+  const cycleEndSatStr = formatDateString(cycleEndSat);
+
+  const start = patient.secondaryStartDate || "2000-01-01";
+  const doses = parseInt(patient.secondaryDoses) || 10;
+  const totalWeeks = (doses - 1) * freq;
+  const endSun = new Date(baseSun);
+  endSun.setDate(baseSun.getDate() + totalWeeks * 7);
+  const endWeekSaturday = new Date(endSun);
+  endWeekSaturday.setDate(endSun.getDate() + 6);
+  const endDateStr = formatDateString(endWeekSaturday);
+
+  const cycleStartStr = formatDateString(cycleStartSun);
+  if (cycleStartStr > endDateStr || cycleEndSatStr < start) {
+    return null;
+  }
+
+  // Check if patient was injected in this cycle (secondary logs)
+  const secondaryLogs = patient.secondaryInjectionLogs || [];
+  const actualInjectedDateStr = secondaryLogs.find(logDate => {
+    return logDate >= cycleStartStr && logDate <= cycleEndSatStr;
+  });
+
+  if (actualInjectedDateStr !== undefined) {
+    const parts = actualInjectedDateStr.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(actualInjectedDateStr);
+  }
+
+  const availableDates = [];
+  for (let offset = 0; offset < freq * 7; offset++) {
+    const candidateDate = new Date(cycleStartSun);
+    candidateDate.setDate(cycleStartSun.getDate() + offset);
+    const candidateDateStr = formatDateString(candidateDate);
+    
+    if (candidateDateStr >= start && candidateDateStr <= endDateStr) {
+      const dayName = WEEKDAYS[candidateDate.getDay()];
+      if (patient.schedules[dayName] !== undefined) {
+        availableDates.push(candidateDate);
+      }
+    }
+  }
+
+  if (availableDates.length === 0) return null;
+
+  const dayIndex = WEEKDAYS.indexOf(patient.usualDay);
+  const primaryDate = new Date(cycleStartSun);
+  primaryDate.setDate(cycleStartSun.getDate() + (dayIndex >= 0 ? dayIndex : 1));
+  primaryDate.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (today < primaryDate) {
+    return primaryDate;
+  } else {
+    const nextAvailable = availableDates.find(d => d >= today);
+    if (nextAvailable) {
+      return nextAvailable;
+    }
+    return availableDates[availableDates.length - 1];
+  }
+}
+
+function isPatientSecondaryChecklistDate(patient, date) {
+  if (!patient.hasSecondary) return false;
+  const checklistDate = getPatientSecondaryChecklistDate(patient, date);
+  if (!checklistDate) return false;
+  return formatDateString(checklistDate) === formatDateString(date);
+}
+
+function getPatientSecondaryActivePreferredDate(patient, cellDate) {
+  if (!patient.hasSecondary) return null;
+  const checklistDate = getPatientSecondaryChecklistDate(patient, cellDate);
+  return checklistDate || getStartOfWeek(cellDate);
+}
+
 // Render the monthly calendar grid using compact indicator person SVG icons
 function renderMonthlyCalendar() {
   const gridContainer = document.getElementById("monthly-calendar-grid");
@@ -502,66 +680,116 @@ function renderMonthlyCalendar() {
     const cellDayIndex = cellDate.getDay();
     const cellDayName = WEEKDAYS[cellDayIndex];
 
-    // Find patients active and scheduled for this weekday
-    const scheduledPatients = patients.filter(p => isPatientScheduledAndActiveOnDate(p, cellDate));
+    // Find patients active and scheduled for this weekday (Main or Secondary)
+    if (patients.length > 0) {
+      patients.forEach(patient => {
+        // 1. Check Main Treatment
+        const isMainActive = isPatientScheduledAndActiveOnDate(patient, cellDate);
+        if (isMainActive) {
+          const sunday = getStartOfWeek(cellDate);
+          const weekStartStr = formatDateString(sunday);
+          const saturdayDate = new Date(sunday);
+          saturdayDate.setDate(sunday.getDate() + 6);
+          const weekEndStr = formatDateString(saturdayDate);
+          
+          const actualInjectedDateStr = patient.injectionLogs.find(logDate => {
+            return logDate >= weekStartStr && logDate <= weekEndStr;
+          });
 
-    if (scheduledPatients.length > 0) {
-      scheduledPatients.forEach(patient => {
-        // 1. Check if patient has been injected this week
-        const sunday = getStartOfWeek(cellDate);
-        const weekStartStr = formatDateString(sunday);
-        const saturdayDate = new Date(sunday);
-        saturdayDate.setDate(sunday.getDate() + 6);
-        const weekEndStr = formatDateString(saturdayDate);
-        
-        const actualInjectedDateStr = patient.injectionLogs.find(logDate => {
-          return logDate >= weekStartStr && logDate <= weekEndStr;
-        });
+          let iconColorClass = "";
+          let statusText = "";
 
-        let iconColorClass = "";
-        let statusText = "";
-
-        if (actualInjectedDateStr !== undefined) {
-          // Patient HAS been injected this week!
-          if (cellDateStr === actualInjectedDateStr) {
-            iconColorClass = "green";
-            statusText = "Injected (This Date)";
-          } else {
-            iconColorClass = "transparent-grey";
-            statusText = "Clinic Available (Injected on " + formatPrettyDate(new Date(actualInjectedDateStr)) + ")";
-          }
-        } else {
-          // Patient has NOT been injected this week!
-          const activePreferredDate = getPatientActivePreferredDate(patient, cellDate);
-          const activePreferredDateStr = formatDateString(activePreferredDate);
-
-          if (cellDateStr === activePreferredDateStr) {
-            // This cell is the active preferred date!
-            if (cellDateStr === todayStr) {
-              iconColorClass = "red";
-              statusText = "Preferred Day (Today - Pending)";
+          if (actualInjectedDateStr !== undefined) {
+            if (cellDateStr === actualInjectedDateStr) {
+              iconColorClass = "green";
+              statusText = "Main Injected (This Date)";
             } else {
-              iconColorClass = "yellow";
-              statusText = "Preferred Day (Pending)";
+              iconColorClass = "transparent-grey";
+              statusText = "Main Clinic Available (Injected on " + formatPrettyDate(new Date(actualInjectedDateStr)) + ")";
             }
           } else {
-            // Other available clinic day (styled as transparent-grey per user comment feedback)
-            iconColorClass = "transparent-grey";
-            statusText = "Clinic Available (Pending)";
+            const activePreferredDate = getPatientActivePreferredDate(patient, cellDate);
+            const activePreferredDateStr = formatDateString(activePreferredDate);
+
+            if (cellDateStr === activePreferredDateStr) {
+              if (cellDateStr === todayStr) {
+                iconColorClass = "red";
+                statusText = "Main Preferred Day (Today - Pending)";
+              } else {
+                iconColorClass = "yellow";
+              }
+            } else {
+              iconColorClass = "transparent-grey";
+              statusText = "Main Clinic Available (Pending)";
+            }
           }
+
+          const iconWrapper = document.createElement("span");
+          iconWrapper.className = `calendar-patient-icon-wrapper ${iconColorClass}`;
+          iconWrapper.title = `${patient.name} - Main (Session ${patient.schedules[cellDayName]}) — ${statusText}`;
+          iconWrapper.innerHTML = `
+            <svg class="calendar-patient-icon" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="7" r="4"></circle>
+              <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+            </svg>
+          `;
+          dotsContainer.appendChild(iconWrapper);
         }
 
-        // Render the beautiful SVG person silhouette icon
-        const iconWrapper = document.createElement("span");
-        iconWrapper.className = `calendar-patient-icon-wrapper ${iconColorClass}`;
-        iconWrapper.title = `${patient.name} (Session ${patient.schedules[cellDayName]}) — ${statusText}`;
-        iconWrapper.innerHTML = `
-          <svg class="calendar-patient-icon" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="7" r="4"></circle>
-            <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
-          </svg>
-        `;
-        dotsContainer.appendChild(iconWrapper);
+        // 2. Check Secondary Treatment
+        const isSecActive = patient.hasSecondary && isPatientScheduledAndActiveOnDateSecondary(patient, cellDate);
+        if (isSecActive) {
+          const sunday = getStartOfWeek(cellDate);
+          const weekStartStr = formatDateString(sunday);
+          const saturdayDate = new Date(sunday);
+          saturdayDate.setDate(sunday.getDate() + 6);
+          const weekEndStr = formatDateString(saturdayDate);
+          
+          const secondaryLogs = patient.secondaryInjectionLogs || [];
+          const actualInjectedDateStr = secondaryLogs.find(logDate => {
+            return logDate >= weekStartStr && logDate <= weekEndStr;
+          });
+
+          let iconColorClass = "";
+          let statusText = "";
+
+          if (actualInjectedDateStr !== undefined) {
+            if (cellDateStr === actualInjectedDateStr) {
+              iconColorClass = "green";
+              statusText = "Secondary Injected (This Date)";
+            } else {
+              iconColorClass = "transparent-grey";
+              statusText = "Secondary Clinic Available (Injected on " + formatPrettyDate(new Date(actualInjectedDateStr)) + ")";
+            }
+          } else {
+            const activePreferredDate = getPatientSecondaryActivePreferredDate(patient, cellDate);
+            const activePreferredDateStr = formatDateString(activePreferredDate);
+
+            if (cellDateStr === activePreferredDateStr) {
+              if (cellDateStr === todayStr) {
+                iconColorClass = "red";
+                statusText = "Secondary Preferred Day (Today - Pending)";
+              } else {
+                iconColorClass = "yellow";
+                statusText = "Secondary Preferred Day (Pending)";
+              }
+            } else {
+              iconColorClass = "transparent-grey";
+              statusText = "Secondary Clinic Available (Pending)";
+            }
+          }
+
+          const iconWrapper = document.createElement("span");
+          iconWrapper.className = `calendar-patient-icon-wrapper secondary-treatment-icon ${iconColorClass}`;
+          iconWrapper.title = `${patient.name} - Secondary (Session ${patient.schedules[cellDayName]}) — ${statusText}`;
+          iconWrapper.innerHTML = `
+            <svg class="calendar-patient-icon" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="7" r="4"></circle>
+              <path d="M12 12c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+            </svg>
+          `;
+          dotsContainer.appendChild(iconWrapper);
+        }
       });
     }
 
@@ -633,25 +861,52 @@ function renderDailyAgenda(date) {
   titleEl.textContent = prettyDate;
   agendaSection.style.display = "block";
 
-  // Filter patients whose checklist date matches this date
-  const scheduled = patients.filter(p => isPatientChecklistDate(p, date));
+  // Build the list of active tasks scheduled for today
+  // Each task has: { patient, type: 'main'|'secondary', isCompleted, round }
+  const dailyTasks = [];
 
-  if (scheduled.length === 0) {
+  patients.forEach(p => {
+    // Check if Main is due today
+    if (isPatientChecklistDate(p, date)) {
+      const isCompleted = p.injectionLogs.includes(dateStr);
+      const round = parseInt(p.schedules[weekdayName]) || 1;
+      dailyTasks.push({
+        patient: p,
+        type: 'main',
+        isCompleted,
+        round
+      });
+    }
+
+    // Check if Secondary is due today
+    if (p.hasSecondary && isPatientSecondaryChecklistDate(p, date)) {
+      const isCompleted = (p.secondaryInjectionLogs || []).includes(dateStr);
+      const round = parseInt(p.schedules[weekdayName]) || 1;
+      dailyTasks.push({
+        patient: p,
+        type: 'secondary',
+        isCompleted,
+        round
+      });
+    }
+  });
+
+  if (dailyTasks.length === 0) {
     statsEl.textContent = "0 scheduled";
     listContainer.innerHTML = `<div class="no-patients-day">No patient injections are scheduled for this day</div>`;
     return;
   }
 
   // Calculate complete count
-  const completedCount = scheduled.filter(p => p.injectionLogs.includes(dateStr)).length;
-  statsEl.textContent = `${completedCount} of ${scheduled.length} Completed`;
+  const completedCount = dailyTasks.filter(t => t.isCompleted).length;
+  statsEl.textContent = `${completedCount} of ${dailyTasks.length} Completed`;
 
   listContainer.innerHTML = "";
 
-  // Group scheduled patients by Sessions 1, 2, and 3
+  // Group dailyTasks by Session (Round) 1, 2, 3
   for (let round = 1; round <= 3; round++) {
-    const roundPatients = scheduled.filter(p => parseInt(p.schedules[weekdayName]) === round);
-    if (roundPatients.length === 0) continue;
+    const roundTasks = dailyTasks.filter(t => t.round === round);
+    if (roundTasks.length === 0) continue;
 
     const roundGroup = document.createElement("div");
     roundGroup.className = "agenda-round-group";
@@ -661,11 +916,12 @@ function renderDailyAgenda(date) {
     roundTitle.textContent = `Session ${round}`;
     roundGroup.appendChild(roundTitle);
 
-    roundPatients.forEach(patient => {
-      const isCompleted = patient.injectionLogs.includes(dateStr);
+    roundTasks.forEach(task => {
+      const patient = task.patient;
+      const isSecondary = task.type === 'secondary';
 
       const item = document.createElement("div");
-      item.className = `agenda-item ${isCompleted ? "completed" : ""}`;
+      item.className = `agenda-item ${task.isCompleted ? "completed" : ""} ${isSecondary ? "secondary-treatment" : ""}`;
 
       // Left Column: Checkbox + Name
       const leftCol = document.createElement("div");
@@ -685,7 +941,7 @@ function renderDailyAgenda(date) {
       // Toggle Injection Completion status specifically on this clicked date
       checkbox.onclick = (e) => {
         e.stopPropagation();
-        toggleInjectionStatus(patient.id, dateStr);
+        toggleInjectionStatus(patient.id, dateStr, isSecondary);
       };
 
       checkContainer.appendChild(checkbox);
@@ -693,7 +949,7 @@ function renderDailyAgenda(date) {
 
       const nameLink = document.createElement("a");
       nameLink.className = "agenda-patient-details-link";
-      nameLink.textContent = patient.name;
+      nameLink.textContent = isSecondary ? `${patient.name} (Secondary)` : `${patient.name} (Main)`;
       nameLink.onclick = () => openPatientDetails(patient.id);
 
       leftCol.appendChild(nameLink);
@@ -730,25 +986,38 @@ function renderDailyAgenda(date) {
   }
 }
 
-// Toggle whether a patient has completed the medicine injection on a specific date
-function toggleInjectionStatus(patientId, dateStr) {
+function toggleInjectionStatus(patientId, dateStr, isSecondary = false) {
   const patient = patients.find(p => p.id === patientId);
   if (!patient) return;
 
-  const logIdx = patient.injectionLogs.indexOf(dateStr);
-  if (logIdx > -1) {
-    // Remove if clicked again (undo action)
-    patient.injectionLogs.splice(logIdx, 1);
+  if (isSecondary) {
+    if (!patient.secondaryInjectionLogs) {
+      patient.secondaryInjectionLogs = [];
+    }
+    const logIdx = patient.secondaryInjectionLogs.indexOf(dateStr);
+    if (logIdx > -1) {
+      // Remove if clicked again (undo action)
+      patient.secondaryInjectionLogs.splice(logIdx, 1);
+    } else {
+      // Add completion log timestamp
+      patient.secondaryInjectionLogs.push(dateStr);
+    }
   } else {
-    // Add completion log timestamp
-    patient.injectionLogs.push(dateStr);
+    const logIdx = patient.injectionLogs.indexOf(dateStr);
+    if (logIdx > -1) {
+      // Remove if clicked again (undo action)
+      patient.injectionLogs.splice(logIdx, 1);
+    } else {
+      // Add completion log timestamp
+      patient.injectionLogs.push(dateStr);
+    }
   }
 
   saveToLocalStorage();
   renderMonthlyCalendar();
   if (selectedDate) renderDailyAgenda(selectedDate);
   renderPatientDirectory();
-}
+};
 
 // Render the Patient Directory Grid (Search & Filter Chip logic)
 function renderPatientDirectory() {
@@ -914,6 +1183,50 @@ function getNextInjectionDate(patient) {
   }
 }
 
+function getNextSecondaryInjectionDate(patient) {
+  if (!patient.hasSecondary) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const freq = parseInt(patient.secondaryFrequency) || 1;
+  const baseSun = getFirstActiveWeekSundaySecondary(patient);
+  if (!baseSun) return null;
+  const todaySun = getStartOfWeek(today);
+  const diffDays = Math.round((todaySun - baseSun) / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.round(diffDays / 7);
+
+  if (diffWeeks < 0) {
+    return getPatientSecondaryChecklistDate(patient, baseSun);
+  }
+
+  const cycleIndex = Math.floor(diffWeeks / freq);
+  const cycleStartSun = new Date(baseSun);
+  cycleStartSun.setDate(baseSun.getDate() + cycleIndex * freq * 7);
+  const cycleEndSat = new Date(cycleStartSun);
+  cycleEndSat.setDate(cycleStartSun.getDate() + freq * 7 - 1);
+  const cycleStartStr = formatDateString(cycleStartSun);
+  const cycleEndSatStr = formatDateString(cycleEndSat);
+
+  const secondaryLogs = patient.secondaryInjectionLogs || [];
+  const hasInjectedThisCycle = secondaryLogs.some(logDate => {
+    return logDate >= cycleStartStr && logDate <= cycleEndSatStr;
+  });
+
+  if (hasInjectedThisCycle) {
+    const nextCycleRef = new Date(today);
+    nextCycleRef.setDate(today.getDate() + freq * 7);
+    return getPatientSecondaryChecklistDate(patient, nextCycleRef);
+  } else {
+    const currentChecklistDate = getPatientSecondaryChecklistDate(patient, today);
+    if (currentChecklistDate) {
+      return currentChecklistDate;
+    }
+    const nextCycleRef = new Date(today);
+    nextCycleRef.setDate(today.getDate() + freq * 7);
+    return getPatientSecondaryChecklistDate(patient, nextCycleRef);
+  }
+}
+
 // 4. Patient Profile Details Modal
 function openPatientDetails(patientId) {
   const patient = patients.find(p => p.id === patientId);
@@ -970,6 +1283,75 @@ function openPatientDetails(patientId) {
   if (patient.frequency == 2) frequencyLabel = "Once per 2 weeks";
   if (patient.frequency == 4) frequencyLabel = "Once per 4 weeks";
 
+  // Calculate and format secondary treatment details if active
+  let secondaryDetailsHtml = "";
+  if (patient.hasSecondary) {
+    const nextSecDate = getNextSecondaryInjectionDate(patient);
+    let nextSecHtml = "";
+    if (nextSecDate) {
+      nextSecHtml = `
+        <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs); background-color: rgba(212, 160, 23, 0.05); border-color: rgba(212, 160, 23, 0.2); color: #b8860b;">
+          <span class="history-item-date">${formatPrettyDate(nextSecDate)}</span>
+          <span class="history-item-badge" style="background-color: #ff9500; color: white;">Next Injection</span>
+        </div>
+      `;
+    }
+
+    const secLogs = patient.secondaryInjectionLogs || [];
+    let secLogsListHtml = `<p style="font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No secondary course injections logged</p>`;
+    if (secLogs.length > 0) {
+      const sortedSecLogs = [...secLogs].sort().reverse();
+      secLogsListHtml = `
+        <div class="detail-history-list">
+          ${nextSecHtml}
+          ${sortedSecLogs.map(logDate => {
+            return `
+              <div class="history-item" style="border-left-color: #ff9500;">
+                <span class="history-item-date">${formatPrettyDate(logDate)}</span>
+                <span class="history-item-badge" style="background-color: rgba(212, 160, 23, 0.1); color: #b8860b; border: 1px solid rgba(212, 160, 23, 0.2);">Secondary Injected</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    } else if (nextSecHtml) {
+      secLogsListHtml = `
+        <div class="detail-history-list">
+          ${nextSecHtml}
+        </div>
+      `;
+    }
+
+    let secFreqLabel = "Once per week";
+    if (patient.secondaryFrequency == 2) secFreqLabel = "Once per 2 weeks";
+    if (patient.secondaryFrequency == 4) secFreqLabel = "Once per 4 weeks";
+
+    secondaryDetailsHtml = `
+      <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-top: var(--spacing-lg); margin-bottom: var(--spacing-xs);">Secondary Treatment Details</h3>
+      <div class="detail-grid-section secondary-treatment-box" style="margin-bottom: var(--spacing-sm); border: 1.5px dashed rgba(212, 160, 23, 0.25);">
+        <div class="detail-grid-item" style="grid-column: span 2;">
+          <div class="detail-grid-item-label" style="color: #b8860b;">First Injection Date</div>
+          <div class="detail-grid-item-value">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
+        </div>
+        <div class="detail-grid-item" style="grid-column: span 2;">
+          <div class="detail-grid-item-label" style="color: #b8860b;">Last Injection Date (Calculated)</div>
+          <div class="detail-grid-item-value">${formatPrettyDate(calculateLastInjectionDateSecondary(patient))}</div>
+        </div>
+        <div class="detail-grid-item">
+          <div class="detail-grid-item-label" style="color: #b8860b;">Dose Course</div>
+          <div class="detail-grid-item-value">${patient.secondaryDoses || 10} Doses</div>
+        </div>
+        <div class="detail-grid-item">
+          <div class="detail-grid-item-label" style="color: #b8860b;">Frequency</div>
+          <div class="detail-grid-item-value">${secFreqLabel}</div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Secondary Injection Log</h3>
+      ${secLogsListHtml}
+    `;
+  }
+
   detailBody.innerHTML = `
     <div class="detail-main-header">
       <div class="detail-patient-avatar">
@@ -1008,8 +1390,10 @@ function openPatientDetails(patientId) {
       ${patient.notes ? `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink); white-space: pre-wrap;">${patient.notes}</p>` : `<p style="font-size: 14px; line-height: 1.5; color: var(--color-ink-muted-48); font-style: italic;">No Note</p>`}
     </div>
 
-    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Injection Log</h3>
+    <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Main Injection Log</h3>
     ${logsHtml}
+
+    ${secondaryDetailsHtml}
 
     <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-md);">Clinic Availability</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--spacing-xs); margin-bottom: var(--spacing-md);">
@@ -1057,6 +1441,27 @@ function bindFormCheckboxesBehavior() {
   });
 }
 
+function initializeFormSecondaryToggle() {
+  const toggleBtn = document.getElementById("toggle-secondary-btn");
+  const secondarySection = document.getElementById("secondary-treatment-section");
+  if (!toggleBtn || !secondarySection) return;
+  toggleBtn.addEventListener("click", () => {
+    const isVisible = secondarySection.style.display === "block";
+    if (isVisible) {
+      secondarySection.style.display = "none";
+      toggleBtn.textContent = "Create Secondary Treatment";
+      document.getElementById("p-sec-start-date").value = "";
+      document.getElementById("p-sec-doses").value = "10";
+      document.getElementById("p-sec-frequency").value = "1";
+    } else {
+      secondarySection.style.display = "block";
+      toggleBtn.textContent = "Remove Secondary Treatment";
+      const secDateInput = document.getElementById("p-sec-start-date");
+      if (!secDateInput.value) secDateInput.value = formatDateString(new Date());
+    }
+  });
+}
+
 function openAddPatientForm() {
   document.getElementById("patient-form").reset();
   document.getElementById("form-patient-id").value = "";
@@ -1073,6 +1478,20 @@ function openAddPatientForm() {
   document.getElementById("p-start-date").value = formatDateString(new Date());
   document.getElementById("p-doses").value = "10";
   document.getElementById("p-frequency").value = "1";
+
+  // Hide secondary treatment and reset toggle button
+  const secondarySection = document.getElementById("secondary-treatment-section");
+  if (secondarySection) secondarySection.style.display = "none";
+  const toggleBtn = document.getElementById("toggle-secondary-btn");
+  if (toggleBtn) toggleBtn.textContent = "Create Secondary Treatment";
+  
+  // Reset secondary fields
+  const secStartDate = document.getElementById("p-sec-start-date");
+  if (secStartDate) secStartDate.value = "";
+  const secDoses = document.getElementById("p-sec-doses");
+  if (secDoses) secDoses.value = "10";
+  const secFreq = document.getElementById("p-sec-frequency");
+  if (secFreq) secFreq.value = "1";
 
   openModal("patient-modal-overlay");
 }
@@ -1091,6 +1510,31 @@ function openEditPatientForm(patientId) {
   document.getElementById("p-start-date").value = patient.startDate || "";
   document.getElementById("p-doses").value = String(patient.doses || 10);
   document.getElementById("p-frequency").value = String(patient.frequency || "1");
+
+  // Populate secondary treatment fields if active
+  const secondarySection = document.getElementById("secondary-treatment-section");
+  const toggleBtn = document.getElementById("toggle-secondary-btn");
+  if (patient.hasSecondary) {
+    if (secondarySection) secondarySection.style.display = "block";
+    if (toggleBtn) toggleBtn.textContent = "Remove Secondary Treatment";
+    
+    const secStartDate = document.getElementById("p-sec-start-date");
+    if (secStartDate) secStartDate.value = patient.secondaryStartDate || "";
+    const secDoses = document.getElementById("p-sec-doses");
+    if (secDoses) secDoses.value = String(patient.secondaryDoses || 10);
+    const secFreq = document.getElementById("p-sec-frequency");
+    if (secFreq) secFreq.value = String(patient.secondaryFrequency || "1");
+  } else {
+    if (secondarySection) secondarySection.style.display = "none";
+    if (toggleBtn) toggleBtn.textContent = "Create Secondary Treatment";
+    
+    const secStartDate = document.getElementById("p-sec-start-date");
+    if (secStartDate) secStartDate.value = "";
+    const secDoses = document.getElementById("p-sec-doses");
+    if (secDoses) secDoses.value = "10";
+    const secFreq = document.getElementById("p-sec-frequency");
+    if (secFreq) secFreq.value = "1";
+  }
 
   // Set clinic availability checkboxes and round dropdown values
   WEEKDAYS.forEach(day => {
@@ -1141,6 +1585,12 @@ function handleFormSubmit(e) {
   const doses = parseInt(document.getElementById("p-doses").value) || 10;
   const frequency = parseInt(document.getElementById("p-frequency").value) || 1;
 
+  // Secondary Treatment Form parameters
+  const hasSecondary = document.getElementById("secondary-treatment-section").style.display === "block";
+  const secondaryStartDate = document.getElementById("p-sec-start-date").value;
+  const secondaryDoses = parseInt(document.getElementById("p-sec-doses").value) || 10;
+  const secondaryFrequency = parseInt(document.getElementById("p-sec-frequency").value) || 1;
+
   // Retrieve availability weekdays and custom sessions
   const schedules = {};
   
@@ -1163,7 +1613,9 @@ function handleFormSubmit(e) {
     if (idx > -1) {
       patients[idx] = {
         ...patients[idx],
-        name, usualDay, usualRound, schedules, notes, startDate, doses, frequency
+        name, usualDay, usualRound, schedules, notes, startDate, doses, frequency,
+        hasSecondary, secondaryStartDate, secondaryDoses, secondaryFrequency,
+        secondaryInjectionLogs: patients[idx].secondaryInjectionLogs || []
       };
     }
   } else {
@@ -1171,7 +1623,9 @@ function handleFormSubmit(e) {
     const newPatient = {
       id: "pat_" + Date.now(),
       name, usualDay, usualRound, schedules, notes, startDate, doses, frequency,
-      injectionLogs: []
+      injectionLogs: [],
+      hasSecondary, secondaryStartDate, secondaryDoses, secondaryFrequency,
+      secondaryInjectionLogs: []
     };
     patients.push(newPatient);
   }
@@ -1553,6 +2007,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Bind interactive modal available days checkboxes dropdown behaviors
   bindFormCheckboxesBehavior();
+  initializeFormSecondaryToggle();
 
   // Bind left collapsible drawer toggle navigation (Midori-style)
   initializeDrawerNavigation();

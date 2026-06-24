@@ -470,35 +470,9 @@
             </div>
           </div>
 
-          <!-- B. Primary Preferred Schedule Box (Moved BELOW Clinic Availability Grid) -->
+          <!-- Merged Main Treatment & Preferred Schedule Box -->
           <div class="preferred-schedule-box" style="margin-top: var(--spacing-lg);">
-            <h4 class="box-title">Primary Preferred Schedule</h4>
-            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
-              <div class="input-group">
-                <label for="p-usual-day">Preferred Injection Day</label>
-                <select id="p-usual-day" class="form-select-pill">
-                  <option value="Sun">Sunday</option>
-                  <option value="Mon">Monday</option>
-                  <option value="Tue">Tuesday</option>
-                  <option value="Wed">Wednesday</option>
-                  <option value="Thu">Thursday</option>
-                  <option value="Fri">Friday</option>
-                  <option value="Sat">Saturday</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label for="p-usual-round">Preferred Session</label>
-                <select id="p-usual-round" class="form-select-pill">
-                  <option value="1">Session 1</option>
-                  <option value="2">Session 2</option>
-                  <option value="3">Session 3</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="preferred-schedule-box" style="margin-top: var(--spacing-md);">
-            <h4 class="box-title">Active Treatment</h4>
+            <h4 class="box-title">Main Treatment</h4>
             <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
               <div class="input-group">
                 <label for="p-start-date">First Injection Date</label>
@@ -527,6 +501,76 @@
             <div class="input-group" style="margin-top: var(--spacing-sm);">
               <label for="p-frequency">Frequency</label>
               <select id="p-frequency" class="form-select-pill">
+                <option value="1">Once per week</option>
+                <option value="2">Once per 2 weeks</option>
+                <option value="4">Once per 4 weeks</option>
+              </select>
+            </div>
+
+            <!-- Dashed separator -->
+            <div class="form-box-divider"></div>
+
+            <h4 class="box-title">Primary Preferred Schedule</h4>
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="p-usual-day">Preferred Injection Day</label>
+                <select id="p-usual-day" class="form-select-pill">
+                  <option value="Sun">Sunday</option>
+                  <option value="Mon">Monday</option>
+                  <option value="Tue">Tuesday</option>
+                  <option value="Wed">Wednesday</option>
+                  <option value="Thu">Thursday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                </select>
+              </div>
+              <div class="input-group" style="margin-bottom: 0;">
+                <label for="p-usual-round">Preferred Session</label>
+                <select id="p-usual-round" class="form-select-pill">
+                  <option value="1">Session 1</option>
+                  <option value="2">Session 2</option>
+                  <option value="3">Session 3</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Treatment Toggle Button -->
+          <button type="button" class="button-pearl-capsule" id="toggle-secondary-btn" style="width: 100%; margin-bottom: var(--spacing-md); justify-content: center; border-color: rgba(212, 160, 23, 0.3); color: #b8860b; background-color: rgba(212, 160, 23, 0.02); font-weight: bold;">
+            Create Secondary Treatment
+          </button>
+
+          <!-- Secondary Treatment Input Box -->
+          <div class="secondary-treatment-box" id="secondary-treatment-section" style="display: none; margin-bottom: var(--spacing-md);">
+            <h4 class="box-title">Secondary Treatment</h4>
+            <div class="input-row-grid" style="margin-top: var(--spacing-sm);">
+              <div class="input-group">
+                <label for="p-sec-start-date">First Injection Date</label>
+                <input type="date" id="p-sec-start-date" class="form-input-text">
+              </div>
+              <div class="input-group">
+                <label for="p-sec-doses">Dose</label>
+                <select id="p-sec-doses" class="form-select-pill">
+                  <option value="1">1 Dose</option>
+                  <option value="2">2 Doses</option>
+                  <option value="3">3 Doses</option>
+                  <option value="4">4 Doses</option>
+                  <option value="5">5 Doses</option>
+                  <option value="6">6 Doses</option>
+                  <option value="7">7 Doses</option>
+                  <option value="8">8 Doses</option>
+                  <option value="9">9 Doses</option>
+                  <option value="10" selected>10 Doses</option>
+                  <option value="11">11 Doses</option>
+                  <option value="12">12 Doses</option>
+                  <option value="13">13 Doses</option>
+                  <option value="14">14 Doses</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group" style="margin-top: var(--spacing-sm); margin-bottom: 0;">
+              <label for="p-sec-frequency">Frequency</label>
+              <select id="p-sec-frequency" class="form-select-pill">
                 <option value="1">Once per week</option>
                 <option value="2">Once per 2 weeks</option>
                 <option value="4">Once per 4 weeks</option>
