@@ -816,6 +816,127 @@ function renderMonthlyCalendar() {
 
     gridContainer.appendChild(cell);
   }
+
+  // Render the clicked day's agenda underneath the calendar section
+  renderCalendarDayAgenda(selectedDate);
+}
+
+function renderCalendarDayAgenda(date) {
+  const container = document.getElementById("calendar-day-agenda-section");
+  const titleEl = document.getElementById("calendar-day-agenda-title");
+  const subtitleEl = document.getElementById("calendar-day-agenda-subtitle");
+  const listContainer = document.getElementById("calendar-day-patients-list");
+  if (!container || !listContainer) return;
+
+  container.style.display = "block";
+  const dateStr = formatDateString(date);
+  const weekdayName = WEEKDAYS[date.getDay()];
+  const prettyDate = formatPrettyDate(date);
+  const weekdayFullName = WEEKDAYS_FULL[weekdayName];
+
+  titleEl.textContent = prettyDate;
+  subtitleEl.textContent = weekdayFullName;
+
+  // Build list of active tasks scheduled for this day
+  const dailyTasks = [];
+  patients.forEach(p => {
+    // Check if Main is due today
+    if (isPatientChecklistDate(p, date)) {
+      const isCompleted = p.injectionLogs.includes(dateStr);
+      const round = parseInt(p.schedules[weekdayName]) || 1;
+      dailyTasks.push({ patient: p, type: 'main', isCompleted, round });
+    }
+    // Check if Secondary is due today
+    if (p.hasSecondary && isPatientSecondaryChecklistDate(p, date)) {
+      const isCompleted = (p.secondaryInjectionLogs || []).includes(dateStr);
+      const round = parseInt(p.schedules[weekdayName]) || 1;
+      dailyTasks.push({ patient: p, type: 'secondary', isCompleted, round });
+    }
+  });
+
+  if (dailyTasks.length === 0) {
+    listContainer.innerHTML = `<div class="no-patients-day" style="padding: var(--spacing-sm) 0; font-size: 14px; color: var(--color-ink-muted-48); font-style: italic;">No patient injections scheduled for this day</div>`;
+    return;
+  }
+
+  listContainer.innerHTML = "";
+
+  // Group dailyTasks by Session (Round) 1, 2, 3
+  for (let round = 1; round <= 3; round++) {
+    const roundTasks = dailyTasks.filter(t => t.round === round);
+    if (roundTasks.length === 0) continue;
+
+    const roundGroup = document.createElement("div");
+    roundGroup.className = "agenda-round-group";
+
+    const roundTitle = document.createElement("div");
+    roundTitle.className = "agenda-round-title";
+    roundTitle.textContent = `Session ${round}`;
+    roundGroup.appendChild(roundTitle);
+
+    roundTasks.forEach(task => {
+      const patient = task.patient;
+      const isSecondary = task.type === 'secondary';
+
+      const item = document.createElement("div");
+      item.className = `agenda-item ${task.isCompleted ? "completed" : ""} ${isSecondary ? "secondary-treatment" : ""}`;
+      item.style.cursor = "default";
+
+      // Left Column: Status bullet + Name
+      const leftCol = document.createElement("div");
+      leftCol.className = "agenda-item-left";
+      leftCol.style.gap = "var(--spacing-md)";
+
+      const bullet = document.createElement("div");
+      bullet.style.width = "12px";
+      bullet.style.height = "12px";
+      bullet.style.borderRadius = "50%";
+      if (task.isCompleted) {
+        bullet.style.backgroundColor = "var(--color-success)";
+      } else {
+        bullet.style.border = "2px solid var(--color-border)";
+        bullet.style.backgroundColor = "transparent";
+      }
+
+      leftCol.appendChild(bullet);
+
+      const nameLink = document.createElement("a");
+      nameLink.className = "agenda-patient-details-link";
+      nameLink.textContent = isSecondary ? `${patient.name} (Secondary)` : `${patient.name} (Main)`;
+      nameLink.onclick = () => openPatientDetails(patient.id);
+      nameLink.style.cursor = "pointer";
+
+      leftCol.appendChild(nameLink);
+      item.appendChild(leftCol);
+
+      // Right Column: Badge & Profile View Icon
+      const rightCol = document.createElement("div");
+      rightCol.className = "agenda-item-right";
+
+      const roundBadge = document.createElement("span");
+      roundBadge.className = "agenda-round-badge";
+      roundBadge.textContent = `Session ${round}`;
+      rightCol.appendChild(roundBadge);
+
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "button-icon-circular";
+      profileBtn.style.width = "30px";
+      profileBtn.style.height = "30px";
+      profileBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      `;
+      profileBtn.onclick = () => openPatientDetails(patient.id);
+
+      rightCol.appendChild(profileBtn);
+      item.appendChild(rightCol);
+      roundGroup.appendChild(item);
+    });
+
+    listContainer.appendChild(roundGroup);
+  }
 }
 
 // 3. UI Core Renderers
@@ -870,6 +991,12 @@ function renderDailyAgenda(date) {
 
   subtitleEl.textContent = `${weekdayFullName}`;
   titleEl.textContent = prettyDate;
+
+  const datePickerInput = document.getElementById("dashboard-date-picker");
+  if (datePickerInput) {
+    datePickerInput.value = dateStr;
+  }
+
   agendaSection.style.display = "block";
 
   // Build the list of active tasks scheduled for today
@@ -1301,9 +1428,9 @@ function openPatientDetails(patientId) {
     let nextSecHtml = "";
     if (nextSecDate) {
       nextSecHtml = `
-        <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs); background-color: var(--color-surface-pearl); border-color: var(--color-hairline); color: var(--color-ink-muted-48);">
-          <span class="history-item-date" style="color: var(--color-ink-muted-48);">${formatPrettyDate(nextSecDate)}</span>
-          <span class="history-item-badge" style="color: var(--color-ink-muted-48);">Next Injection</span>
+        <div class="history-item next-injection" style="margin-bottom: var(--spacing-xs);">
+          <span class="history-item-date" style="color: var(--color-ink);">${formatPrettyDate(nextSecDate)}</span>
+          <span class="history-item-badge">Next Injection</span>
         </div>
       `;
     }
@@ -1317,9 +1444,9 @@ function openPatientDetails(patientId) {
           ${nextSecHtml}
           ${sortedSecLogs.map(logDate => {
             return `
-              <div class="history-item" style="background-color: var(--color-surface-pearl); border-color: var(--color-hairline); color: var(--color-ink-muted-48);">
-                <span class="history-item-date" style="color: var(--color-ink-muted-48);">${formatPrettyDate(logDate)}</span>
-                <span class="history-item-badge" style="color: var(--color-ink-muted-48);">Injected</span>
+              <div class="history-item">
+                <span class="history-item-date" style="color: var(--color-ink);">${formatPrettyDate(logDate)}</span>
+                <span class="history-item-badge">Injected</span>
               </div>
             `;
           }).join("")}
@@ -1344,38 +1471,38 @@ function openPatientDetails(patientId) {
       <h3 style="font-size: 14px; font-weight: 600; color: #b8860b; margin-top: 0; margin-bottom: var(--spacing-xs);">Secondary Treatment Details</h3>
       <div class="detail-grid-section" style="margin-top: var(--spacing-xs); margin-bottom: var(--spacing-sm);">
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Schedule Day</div>
-          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${WEEKDAYS_FULL[patient.secondaryUsualDay || patient.usualDay || "Mon"]} : Session ${patient.secondaryUsualRound || 1}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink);">Schedule Day</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink);">${WEEKDAYS_FULL[patient.secondaryUsualDay || patient.usualDay || "Mon"]} : Session ${patient.secondaryUsualRound || 1}</div>
         </div>
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">First Injection Date</div>
-          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink);">First Injection Date</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink);">${patient.secondaryStartDate ? formatPrettyDate(patient.secondaryStartDate) : "Not set"}</div>
         </div>
         <div class="detail-grid-item" style="grid-column: span 2;">
-          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Last Injection Date (Estimated)</div>
-          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${formatPrettyDate(calculateLastInjectionDateSecondary(patient))}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink);">Last Injection Date (Estimated)</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink);">${formatPrettyDate(calculateLastInjectionDateSecondary(patient))}</div>
         </div>
         <div class="detail-grid-item">
-          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Dose Course</div>
-          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${patient.secondaryDoses || 10} Doses</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink);">Dose Course</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink);">${patient.secondaryDoses || 10} Doses</div>
         </div>
         <div class="detail-grid-item">
-          <div class="detail-grid-item-label" style="color: var(--color-ink-muted-48);">Frequency</div>
-          <div class="detail-grid-item-value" style="color: var(--color-ink-muted-48);">${secFreqLabel}</div>
+          <div class="detail-grid-item-label" style="color: var(--color-ink);">Frequency</div>
+          <div class="detail-grid-item-value" style="color: var(--color-ink);">${secFreqLabel}</div>
         </div>
       </div>
 
       <h3 style="font-size: 14px; font-weight: 600; color: var(--color-ink-muted-48); margin-bottom: var(--spacing-xs); margin-top: var(--spacing-lg);">Secondary Injection Log</h3>
       ${secLogsListHtml}
+
+      <!-- Grey dashed line separator before Clinic Availability -->
+      <div class="form-box-divider" style="border-top: 1.5px dashed rgba(0, 0, 0, 0.12); margin: var(--spacing-lg) 0;"></div>
     `;
   }
 
   detailBody.innerHTML = `
     <div class="detail-main-header">
-      <div class="detail-patient-avatar">
-        ${patient.name.charAt(0)}
-      </div>
-      <div class="detail-main-info">
+      <div class="detail-main-info" style="padding-left: 0;">
         <h2>${patient.name}</h2>
         ${patient.notes ? `<p style="font-size: 13px; line-height: 1.4; color: var(--color-ink-muted-48); margin-top: 4px; white-space: pre-wrap;"><strong>Note:</strong> ${patient.notes}</p>` : ""}
       </div>
@@ -2069,6 +2196,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const patientForm = document.getElementById("patient-form");
   if (patientForm) {
     patientForm.addEventListener("submit", handleFormSubmit);
+  }
+
+  // Dashboard date picker change event
+  const datePicker = document.getElementById("dashboard-date-picker");
+  if (datePicker) {
+    datePicker.addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (val) {
+        const parts = val.split('-');
+        selectedDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        renderDailyAgenda(selectedDate);
+        renderMonthlyCalendar();
+      }
+    });
   }
 
   // Modal Cancel and Close button clicks

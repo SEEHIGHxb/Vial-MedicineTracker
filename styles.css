@@ -2306,30 +2306,4 @@ input:checked + .switch-slider:before {
   margin-bottom: 2px;
 }
 
-/* Yellow-themed Secondary Treatment Agenda items and Checkboxes */
-.agenda-item.secondary-treatment .agenda-checkbox {
-  border-color: rgba(212, 160, 23, 0.4);
-  color: #b8860b;
-}
-
-.agenda-item.secondary-treatment .agenda-checkbox:hover {
-  background-color: rgba(212, 160, 23, 0.08);
-}
-
-.agenda-item.secondary-treatment.completed .agenda-checkbox {
-  background-color: #ff9500;
-  border-color: #ff9500;
-  color: white;
-}
-
-.agenda-item.secondary-treatment .agenda-patient-details-link {
-  border-left: 3px solid #ff9500;
-  padding-left: 6px;
-}
-
-.agenda-item.secondary-treatment .agenda-round-badge {
-  background-color: rgba(212, 160, 23, 0.08);
-  color: #b8860b;
-  border: 1px solid rgba(212, 160, 23, 0.15);
-}
 

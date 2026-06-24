@@ -115,9 +115,10 @@
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-              <div>
+              <div style="position: relative; cursor: pointer;">
                 <span class="agenda-date-subtitle" id="agenda-date-subtitle">Selected Day</span>
-                <h3 class="agenda-date-title" id="agenda-date-title">Sunday, 31 May 2026</h3>
+                <h3 class="agenda-date-title" id="agenda-date-title" style="display: flex; align-items: center; gap: 4px;">Sunday, 31 May 2026</h3>
+                <input type="date" id="dashboard-date-picker" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
               </div>
               <button class="calendar-nav-btn" id="next-day-btn" aria-label="Next day" style="padding: 4px; display: inline-flex; align-items: center; justify-content: center; background-color: var(--color-surface-pearl); border-radius: var(--rounded-full); width: 32px; height: 32px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -166,6 +167,18 @@
           <!-- The Monthly Day Grid -->
           <div class="monthly-grid" id="monthly-calendar-grid">
             <!-- Dynamically generated month grid will be injected here -->
+          </div>
+        </div>
+
+        <!-- CLICKED DAY AGENDA DETAIL BELOW CALENDAR -->
+        <div class="calendar-agenda-container" id="calendar-day-agenda-section" style="margin-top: var(--spacing-lg); display: none;">
+          <div class="form-box-divider" style="border-top: 1.5px dashed rgba(0, 0, 0, 0.12); margin: var(--spacing-lg) 0 12px 0;"></div>
+          <h3 style="font-size: 15px; font-weight: 600; color: var(--color-ink); margin-bottom: var(--spacing-sm); display: flex; align-items: center; justify-content: space-between; font-family: inherit;">
+            <span id="calendar-day-agenda-title" style="font-weight: 700;">Click a date on the calendar to view its schedule</span>
+            <span id="calendar-day-agenda-subtitle" style="font-size: 13px; color: var(--color-ink-muted-48); font-weight: normal;"></span>
+          </h3>
+          <div class="agenda-patients-list" id="calendar-day-patients-list" style="margin-top: var(--spacing-sm);">
+            <!-- Clicked day scheduled patients will be injected here -->
           </div>
         </div>
       </div>
